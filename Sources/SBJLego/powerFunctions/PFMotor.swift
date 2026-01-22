@@ -17,10 +17,10 @@ public struct PFMotor: MotorProtocol {
 	public var readOnlyCalibration: Bool { true }
 	public let increment: Double? = 128.0/16.0
 
-	public init(device: PFDevice, port: PFPort) {
+	public init(device: PFDeviceTransmitter, port: PFPort) {
 		self.power = Power(
 			sendControl: { value in
-				device.send(port: port, power: value)
+				device.transmit(port: port, power: value)
 				return abs(value) < (256 / 32) ? 0 : value
 			},
 			transfomer: ScaledTransformer((127)))

@@ -1,5 +1,5 @@
 #include "MySDCard.h"
-#include "shared/MyTime.h"
+#include "shared/core/MyTime.h"
 
 MySDCard::MySDCard()
 : _fs(NULL) {

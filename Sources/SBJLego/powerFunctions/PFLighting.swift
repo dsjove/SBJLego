@@ -17,10 +17,10 @@ public struct PFLighting: LightingProtocol {
 	public let hasDimmer: Bool = true
 	public let increment: Double? = 128.0/16.0
 
-	public init(device: PFDevice, port: PFPort) {
+	public init(device: PFDeviceTransmitter, port: PFPort) {
 		self.power = Value(
 			sendControl: { value in
-				device.send(port: port, power: Int8(value))
+				device.transmit(port: port, power: Int8(value))
 				return value
 			},
 			transfomer: ScaledTransformer((127)))
