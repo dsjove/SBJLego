@@ -33,43 +33,6 @@ public extension LightingProtocol {
 	}
 }
 
-public struct PFLighting: LightingProtocol {
-	public typealias Value = TransformedProperty<ScaledTransformer<UInt8>>
-	
-	public let power: Value
-	public let calibration: Value? = nil
-	public let sensed: Value? = nil
-	public let hasDimmer: Bool = true
-	public let increment: Double? = 128.0/16.0
-
-	public init(device: PFDevice, port: PFPort) {
-		self.power = Value(
-			sendControl: { value in
-				device.send(port: port, power: Int8(value))
-				return value
-			},
-			transfomer: ScaledTransformer((127)))
-	}
-}
-
-public struct CCLighting: LightingProtocol {
-	public typealias Value = TransformedProperty<ScaledTransformer<Int16>>
-	
-	public let power: Value
-	public let calibration: Value? = nil
-	public let sensed: Value? = nil
-	public let hasDimmer: Bool = true
-
-	public init(cube: CircuitCube) {
-		self.power = Value(sendControl: { value in
-			Task {
-				await cube.power(set: value, on: [.b, .c], dropKey: "lighting")
-			}
-			return value
-		}, transfomer: ScaledTransformer(255))
-	}
-}
-
 public struct BTLighting: LightingProtocol {
 	public typealias Value = BTProperty<ScaledTransformer<UInt8>>
 	
