@@ -13,8 +13,8 @@ import Network
 public typealias IPv4AddressProperty = BTProperty<BTValueTransformer<IPv4Address>>
 
 public protocol MotorizedFacility: Facility {
-	associatedtype Lighting: LightingProtocol
 	associatedtype Motor: MotorProtocol
+	associatedtype Lighting: LightingProtocol
 
 	var motor: Motor { get }
 	var lighting: Lighting? { get }
