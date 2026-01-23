@@ -3,6 +3,10 @@ import Observation
 import SBJKit
 import BLEByJove
 
+public extension RFIDDetection {
+	var uuid: UUID { UUID(dataBytes: id) }
+}
+
 public struct FacilityCategory: Hashable, Sendable {
 	let rawValue: String
 	public init(_ rawValue: String) {

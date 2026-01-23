@@ -71,6 +71,8 @@ public final class FacilityRepository: RFIDConsumer, PFTransmitter {
 
 		// If devices have disappeared
 		for deviceID in scope.keys where !scannerDeviceIds.contains(deviceID) {
+			//Reset any current RFIDs
+			resetRFID(deviceID)
 			// Remove all facilities for the device
 			scope.removeValue(forKey: deviceID)
 			// Cancel all tokens for the device
@@ -85,6 +87,16 @@ public final class FacilityRepository: RFIDConsumer, PFTransmitter {
 	public func consumeRFID(_ detection: SampledRFIDDetection) {
 		for scanner in scanners {
 			( (scanner as? RFIDConsumer) )?.consumeRFID(detection)
+		}
+	}
+
+	public func resetRFID(_ uuid: UUID) {
+		for facility in facilities {
+			if let facility = facility.value as? RFIDProducing {
+				if facility.currentRFID?.rfid.uuid == uuid {
+					facility.resetRFID()
+				}
+			}
 		}
 	}
 
