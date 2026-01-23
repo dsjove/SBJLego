@@ -16,20 +16,20 @@ public typealias FacilityEntry = Identified<any Facility>
 public final class FacilityRepository: RFIDConsumer, PFTransmitter {
 	public private(set) var scanners: [any DeviceScanning] = []
 
-	private let createFacilities: (any DeviceIdentifiable) -> [any Facility]
 	private var facilitiesByDeviceID: [ObjectIdentifier : [UUID: [FacilityEntry]]] = [:]
 	public private(set) var facilities: [FacilityEntry] = []
 
 	private var rfidTokensByDeviceID: [UUID: [ObserveToken]] = [:]
 
-	public init(createFacilities: @escaping (any DeviceIdentifiable) -> [any Facility]) {
-		self.createFacilities = createFacilities
+	public init() {
 	}
 
-	public func addScanner<S: DeviceScanner>(_ scanner: S) {
+	public func addScanner<S: DeviceScanner>(
+		_ scanner: S,
+		_ facilities: @escaping (S.Device)->[Facility]) {
 		scanners.append(scanner)
-		observeValue(of: scanner, \.anyDevices, with: self) { scanner, devices, this in
-			this?.sync(devices, scoped: ObjectIdentifier(scanner))
+		observeValue(of: scanner, \.devices, with: self) { scanner, _, this in
+			this?.sync(scanner, facilities)
 		}
 	}
 
@@ -39,14 +39,15 @@ public final class FacilityRepository: RFIDConsumer, PFTransmitter {
 		}
 	}
 
-	private func sync(_ scannerDevices: [any DeviceIdentifiable], scoped: ObjectIdentifier) {
+	private func sync<S: DeviceScanner>(_ scanner: S, _ facilities: (S.Device)->[Facility]) {
+		let scannerDevices = scanner.devices
 		let scannerDeviceIds = Set(scannerDevices.map(\.id))
-		var scope = facilitiesByDeviceID[scoped] ?? [:]
+		var scope = facilitiesByDeviceID[ObjectIdentifier(scanner)] ?? [:]
 
 		// Given never seen device before
 		for device in scannerDevices where scope[device.id] == nil {
 			// Create the facilities
-			let newFacilities = createFacilities(device)
+			let newFacilities = facilities(device)
 			scope[device.id] = newFacilities.map { .init($0, id: $0.id) }
 			// Observe RFIDs if we can
 			for facility in newFacilities {
@@ -77,7 +78,7 @@ public final class FacilityRepository: RFIDConsumer, PFTransmitter {
 				for token in tokens { token.cancel() }
 			}
 		}
-		facilitiesByDeviceID[scoped] = scope
+		facilitiesByDeviceID[ObjectIdentifier(scanner)] = scope
 		rebuildFacilitiesSorted()
 	}
 
