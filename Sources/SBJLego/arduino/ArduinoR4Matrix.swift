@@ -166,7 +166,7 @@ public struct ArduinoR4Matrix: Equatable, BTSerializable {
 			let bufferPointer = rawBufferPointer.bindMemory(to: UInt32.self)
 			uint32Array = bufferPointer.map { $0 }
 		}
-		let elements = uint32Array.map { "0x" + String(format: "%08x", $0) }.joined(separator: ", ")
+		let elements = uint32Array.map { "0x" + String(format: "%08xu", $0) }.joined(separator: ", ")
 		let cArrayString = "const std::array<uint32_t, 3> \(name) = {\(elements)};\n"
 		return cArrayString
 	}

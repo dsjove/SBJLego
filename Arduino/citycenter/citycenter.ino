@@ -32,6 +32,10 @@ void setup()
   _lighting.begin();
   _RFIDBroadcaster.begin();
   _pfTransmitter.begin();
+
+  _matrixR4.update(MatrixR4Value::allOn);
+  delay(200);
+  _matrixR4.update(MatrixR4Value::circle);
 }
 
 void loop()
