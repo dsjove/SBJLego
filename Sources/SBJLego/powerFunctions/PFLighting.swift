@@ -15,7 +15,7 @@ public struct PFLighting: LightingProtocol {
 	public let calibration: Value? = nil
 	public let sensed: Value? = nil
 	public let hasDimmer: Bool = true
-	public let increment: Double? = 128.0/16.0
+	public let increment: Double? = 0.0625
 
 	public init(device: PFDeviceTransmitter, port: PFPort) {
 		self.power = Value(

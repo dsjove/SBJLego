@@ -15,7 +15,7 @@ public struct PFMotor: MotorProtocol {
 	public let power: Power
 	public let calibration: Calibration?
 	public var readOnlyCalibration: Bool { true }
-	public let increment: Double? = 128.0/16.0
+	public let increment: Double? = 0.0625
 
 	public init(device: PFDeviceTransmitter, port: PFPort) {
 		self.power = Power(
