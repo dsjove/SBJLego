@@ -44,7 +44,7 @@ public:
   bool update(const Value& input);
 
   inline const uint32_t* data() const { return _value.data(); }
-  inline size_t size() const { return _value.size(); }
+  inline size_t size() const { return sizeof(_value); }
 
 private:
   Value _value;
@@ -55,6 +55,16 @@ private:
   inline static int getIndex(int y, int x)
   {
     return y * Width + x;
+  }
+
+  inline static int flipY(int y)
+  {
+    return Height - 1 - y;
+  }
+
+  inline static int flipX(int x)
+  {
+    return Width - 1 - x;
   }
 
   inline static bool getBit(const Value& frame, int index)

@@ -29,7 +29,7 @@ struct IDBTCharacteristic {
     const std::string& propertyId,
     const std::array<T, N>& value,
     BLECharacteristicEventHandler eventHandler = NULL)
-    : IDBTCharacteristic(runner, propertyId, value.size(), value.data(), eventHandler) {}
+    : IDBTCharacteristic(runner, propertyId, sizeof(value), value.data(), eventHandler) {}
 
 	//TODO: use the UUID on eventHandler to route to a lambda extression
 	//Create a new static class for this so we don't multiple these constructors

@@ -20,6 +20,20 @@ Lighting _lighting(_runner, _ble, {{3, true}, {0, false}}, A0);
 RFIDBroadcaster _RFIDBroadcaster(_runner, _ble, 1);
 LEGOPFTransmitter _pfTransmitter(_runner, _ble, 7);
 
+constexpr int announceCount = 2;
+int announceCounter = 0;
+void announce()
+{
+  if (announceCounter == 0) {
+    _matrixR4.update(MatrixR4Value::allOn);
+  }
+  else if (announceCounter == 1) {
+    _matrixR4.update(MatrixR4Value::circle);
+  }
+  announceCounter++;
+}
+Task announceTask(500, announceCount, &announce, &_runner);
+
 void setup()
 {
   Serial.begin(9600);
@@ -33,9 +47,7 @@ void setup()
   _RFIDBroadcaster.begin();
   _pfTransmitter.begin();
 
-  _matrixR4.update(MatrixR4Value::allOn);
-  delay(200);
-  _matrixR4.update(MatrixR4Value::circle);
+  announceTask.enable();
 }
 
 void loop()

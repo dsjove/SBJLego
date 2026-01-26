@@ -4,7 +4,7 @@ static MatrixR4* matrixRefR4 = NULL;
 
 MatrixR4::MatrixR4(BLEServiceRunner& ble, const Value& value)
 : _current(value)
-, _displayChar(ble, "07020000", &_current, updateDisplay)
+, _displayChar(ble, "07020000", _current.size(), _current.data(), updateDisplay)
 {
   matrixRefR4 = this;
 }
@@ -53,8 +53,8 @@ bool MatrixR4Value::update(const MatrixR4Value::Value& input)
     {
       for (int x = 0; x < Width; ++x)
       {
-        const int srcY = _flipY ? (Height - 1 - y) : y;
-        const int srcX = _flipX ? (Width  - 1 - x) : x;
+        const int srcY = _flipY ? flipY(y) : y;
+        const int srcX = _flipX ? flipX(x) : x;
         const int srcIndex = getIndex(srcY, srcX);
         const int dstIndex = getIndex(y, x);
         bool pixel = getBit(input, srcIndex);
