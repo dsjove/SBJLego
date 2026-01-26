@@ -53,10 +53,10 @@ bool MatrixR4Value::update(const MatrixR4Value::Value& input)
     {
       for (int x = 0; x < Width; ++x)
       {
-        const int srcX = _flipX ? (Width  - 1 - x) : x;
         const int srcY = _flipY ? (Height - 1 - y) : y;
-        const int srcIndex = srcY * Width + srcX;
-        const int dstIndex = y * Width + x;
+        const int srcX = _flipX ? (Width  - 1 - x) : x;
+        const int srcIndex = getIndex(srcY, srcX);
+        const int dstIndex = getIndex(y, x);
         bool pixel = getBit(input, srcIndex);
         if (_invert) pixel = !pixel;
         setBit(newValue, dstIndex, pixel);

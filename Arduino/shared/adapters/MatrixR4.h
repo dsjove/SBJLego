@@ -27,16 +27,16 @@ public:
   static constexpr Value allOn  = { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu };
   static constexpr Value circle = { 0x06009010u, 0x82042041u, 0x08090060u };
 
-  MatrixR4Value(bool flipX = false, bool flipY = false, bool invert = false)
+  MatrixR4Value(bool flipY = false, bool flipX = false, bool invert = false)
     : _value(allOff)
-    , _flipX(flipX)
     , _flipY(flipY)
+    , _flipX(flipX)
     , _invert(invert)
   {
   }
 
-  MatrixR4Value(const Value& value, bool flipX = false, bool flipY = false, bool invert = false)
-    : MatrixR4Value(flipX, flipY, invert)
+  MatrixR4Value(const Value& value, bool flipY = false, bool flipX = false, bool invert = false)
+    : MatrixR4Value(flipY, flipX, invert)
   {
     update(value);
   }
@@ -48,19 +48,26 @@ public:
 
 private:
   Value _value;
-  const bool _flipX;
   const bool _flipY;
+  const bool _flipX;
   const bool _invert;
+
+  inline static int getIndex(int y, int x)
+  {
+    return y * Width + x;
+  }
 
   inline static bool getBit(const Value& frame, int index)
   {
-    return (frame[index / 32] >> (index % 32)) & 0x01u;
+    const uint32_t word = frame[index / 32];
+    const uint32_t mask = 1u << (31 - (index % 32));  // MSB-first
+    return (word & mask) != 0;
   }
 
   inline static void setBit(Value& frame, int index, bool value)
   {
     uint32_t& word = frame[index / 32];
-    const uint32_t mask = 1u << (index % 32);
+    const uint32_t mask = 1u << (31 - (index % 32));  // MSB-first
     word = value ? (word | mask) : (word & ~mask);
   }
 };

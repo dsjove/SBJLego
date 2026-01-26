@@ -7,7 +7,7 @@
 class RFIDBroadcaster : ScheduledRunner
 {
 public:
-  RFIDBroadcaster(Scheduler& scheduler, BLEServiceRunner& ble, uint32_t number, int ss_pin = 10, int rst_pin = 9);
+  RFIDBroadcaster(Scheduler& scheduler, BLEServiceRunner& ble, uint32_t number, int ss_pin = 10, int rst_pin = 8);
 
   void begin();
 
