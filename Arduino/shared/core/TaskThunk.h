@@ -38,3 +38,35 @@ private:
     self->runner->loop(t);
   }
 };
+
+//TODO: use this pattern instead
+
+template<uint8_t N>
+class Channel {
+public:
+  Channel(Scheduler& sched,
+          uint32_t intervalMs,
+          long iterations = TASK_FOREVER,
+          bool startEnabled = true)
+  : _task(intervalMs, iterations, &Channel<N>::tick, &sched, startEnabled)
+  {}
+
+  void begin() {
+    // Nothing required here unless you want extra init
+  }
+
+private:
+  Task _task;
+
+  // ---- static per-N state ----
+  static inline int counter = 0;
+  static inline uint32_t lastTick = 0;
+
+  // ---- scheduler callback ----
+  static void tick() {
+    counter++;
+    lastTick = millis();
+
+    // operate on Channel<N>'s static data
+  }
+};

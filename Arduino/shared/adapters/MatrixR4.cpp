@@ -4,7 +4,7 @@ static MatrixR4* matrixRefR4 = NULL;
 
 MatrixR4::MatrixR4(BLEServiceRunner& ble, const Value& value)
 : _current(value)
-, _displayChar(ble, "07020000", _current.size(), _current.data(), updateDisplay)
+, _displayChar(ble, "07020000", _current.size(), _current.data(), bleUpdate)
 {
   matrixRefR4 = this;
 }
@@ -15,29 +15,29 @@ void MatrixR4::begin()
   _matrix.loadFrame(_current.data());
 }
 
-void MatrixR4::updateDisplay(BLEDevice, BLECharacteristic characteristic)
+void MatrixR4::bleUpdate(BLEDevice, BLECharacteristic characteristic)
 {
   //Serial.println(characteristic.uuid());
   MatrixR4Value::Value value;
   characteristic.readValue(value.data(), sizeof(value));
-  matrixRefR4->set(value);
+  if (matrixRefR4->_current.update(value))
+  {
+    matrixRefR4->loadFrame();
+  }
 }
 
-void MatrixR4::update(const MatrixR4Value::Value& data)
+void MatrixR4::update(const MatrixR4Value::Value& value)
 {
-  if (_current.update(data))
+  if (_current.update(value))
   {
     _displayChar.ble.writeValue(_current.data(), _current.size());
-    _matrix.loadFrame(_current.data());
+    loadFrame();
   }
 }
 
-void MatrixR4::set(const MatrixR4Value::Value& data)
+void MatrixR4::loadFrame()
 {
-  if (_current.update(data))
-  {
-    _matrix.loadFrame(_current.data());
-  }
+  _matrix.loadFrame(_current.data());
 }
 
 bool MatrixR4Value::update(const MatrixR4Value::Value& input)

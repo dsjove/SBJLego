@@ -1,10 +1,10 @@
 #include "BLEServiceRunner.h"
 
-BLEServiceRunner::BLEServiceRunner(Scheduler& scheduler, const std::string& serviceName, const std::string& overrideId)
+BLEServiceRunner::BLEServiceRunner(Scheduler& scheduler, const std::string& serviceName, int pollMS, const std::string& overrideId)
 : _name(serviceName)
 , _serviceId(btutil::makeUuidWithService(serviceName, overrideId))
 , _bleService(_serviceId.data())
-, _bluetoothTask(scheduler, 100, this)
+, _bluetoothTask(scheduler, pollMS, this)
 {
 }
 

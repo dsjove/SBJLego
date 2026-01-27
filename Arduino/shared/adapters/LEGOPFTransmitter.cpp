@@ -44,10 +44,10 @@ void LEGOPFTransmitter::transmit(BLEDevice, BLECharacteristic characteristic)
     mode
   };
   if (pfTranbsmitterRef->_value != command) {
-	  Serial.print("Power: ");
-	  Serial.print(inPower);
-	  Serial.print(" -> ");
-	  Serial.println(outPower);
+//	  Serial.print("Power: ");
+//	  Serial.print(inPower);
+//	  Serial.print(" -> ");
+//	  Serial.println(outPower);
     pfTranbsmitterRef->_value = command;
     pfTranbsmitterRef->_ir.apply(command);
   }

@@ -21,6 +21,7 @@ RFIDBroadcaster _RFIDBroadcaster(_runner, _ble, 1);
 LEGOPFTransmitter _pfTransmitter(_runner, _ble, 7);
 
 constexpr int announceCount = 2;
+constexpr int announceTime = 500;
 int announceCounter = 0;
 void announce()
 {
@@ -32,7 +33,7 @@ void announce()
   }
   announceCounter++;
 }
-Task announceTask(500, announceCount, &announce, &_runner);
+Task announceTask(announceTime, announceCount, &announce, &_runner);
 
 void setup()
 {

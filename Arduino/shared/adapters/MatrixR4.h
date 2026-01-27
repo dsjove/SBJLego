@@ -91,15 +91,15 @@ public:
 
   void begin();
 
-  void update(const MatrixR4Value::Value& data);
+  void update(const MatrixR4Value::Value& value);
 
 private:
   Value _current;
 
   IDBTCharacteristic _displayChar;
-  static void updateDisplay(BLEDevice device, BLECharacteristic characteristic);
+  static void bleUpdate(BLEDevice device, BLECharacteristic characteristic);
 
   ArduinoLEDMatrix _matrix;
 
-  void set(const MatrixR4Value::Value& data);
+  void loadFrame();
 };

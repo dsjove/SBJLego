@@ -7,7 +7,7 @@
 class BLEServiceRunner: ScheduledRunner
 {
 public:
-  BLEServiceRunner(Scheduler& scheduler, const std::string& serviceName, const std::string& overrideId = "");
+  BLEServiceRunner(Scheduler& scheduler, const std::string& serviceName, int pollMS = 100, const std::string& overrideId = "");
 
   void addCharacteristic(BLECharacteristic& ble);
 
