@@ -17,7 +17,7 @@ Scheduler _runner;
 BLEServiceRunner _ble(_runner, "City Center");
 MatrixR4 _matrixR4(_ble, MatrixR4Value(true, true));
 Lighting _lighting(_runner, _ble, {{3, true}, {0, false}}, A0);
-RFIDBroadcaster _RFIDBroadcaster(_runner, _ble, 1);
+RFIDBroadcaster _RFIDBroadcaster(_runner, _ble);
 LEGOPFTransmitter _pfTransmitter(_runner, _ble, 7);
 
 constexpr int announceCount = 2;

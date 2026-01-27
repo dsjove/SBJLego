@@ -11,7 +11,7 @@ enum class Level : uint8_t
 };
 
 // -------------------- Pin modes --------------------
-enum class PinMode : uint8_t
+enum class GpioMode : uint8_t
 {
   DigitalIn,
   DigitalInPullup,
@@ -45,12 +45,12 @@ struct ArchTypes
 };
 
 // -------------------- Mode traits --------------------
-template <PinMode>
-struct PinModeTraits;
+template <GpioMode>
+struct GpioModeTraits;
 
 // ---- Reserved (no ownership, no operations) ----
 template <>
-struct PinModeTraits<PinMode::Reserved>
+struct GpioModeTraits<GpioMode::Reserved>
 {
   using value_type = void;
 
@@ -63,7 +63,7 @@ struct PinModeTraits<PinMode::Reserved>
 
 // ---- Digital input ----
 template <>
-struct PinModeTraits<PinMode::DigitalIn>
+struct GpioModeTraits<GpioMode::DigitalIn>
 {
   using value_type = ArchTypes::digital_type;
 
@@ -84,7 +84,7 @@ struct PinModeTraits<PinMode::DigitalIn>
 
 // ---- Digital input w/ pullup ----
 template <>
-struct PinModeTraits<PinMode::DigitalInPullup>
+struct GpioModeTraits<GpioMode::DigitalInPullup>
 {
   using value_type = ArchTypes::digital_type;
 
@@ -105,7 +105,7 @@ struct PinModeTraits<PinMode::DigitalInPullup>
 
 // ---- Analog input ----
 template <>
-struct PinModeTraits<PinMode::AnalogIn>
+struct GpioModeTraits<GpioMode::AnalogIn>
 {
   using value_type = ArchTypes::analog_type;
 
@@ -115,7 +115,7 @@ struct PinModeTraits<PinMode::AnalogIn>
 
   static void begin(uint8_t /*pin*/)
   {
-    // no pinMode required
+    // no GpioMode required
   }
 
   static value_type read(uint8_t pin)
@@ -126,7 +126,7 @@ struct PinModeTraits<PinMode::AnalogIn>
 
 // ---- Digital output ----
 template <>
-struct PinModeTraits<PinMode::DigitalOut>
+struct GpioModeTraits<GpioMode::DigitalOut>
 {
   using value_type = ArchTypes::digital_type;
 
@@ -147,7 +147,7 @@ struct PinModeTraits<PinMode::DigitalOut>
 
 // ---- PWM output ----
 template <>
-struct PinModeTraits<PinMode::PWMOut>
+struct GpioModeTraits<GpioMode::PWMOut>
 {
   using value_type = ArchTypes::pwm_type;
 
@@ -167,19 +167,19 @@ struct PinModeTraits<PinMode::PWMOut>
 };
 
 // -------------------- PinIO (direction + ownership locked via traits) --------------------
-template <uint8_t PIN, PinMode MODE>
+template <uint8_t PIN, GpioMode MODE>
 struct PinIO
 {
   static constexpr uint8_t pin  = PIN;
-  static constexpr PinMode mode = MODE;
+  static constexpr GpioMode mode = MODE;
 
-  using Traits = PinModeTraits<MODE>;
+  using Traits = GpioModeTraits<MODE>;
   using value_type = typename Traits::value_type;
 
   // begin() only when beginable
   template <
-    PinMode M = MODE,
-    typename std::enable_if_t<PinModeTraits<M>::beginable, int> = 0>
+    GpioMode M = MODE,
+    typename std::enable_if_t<GpioModeTraits<M>::beginable, int> = 0>
   static void begin()
   {
     Traits::begin(PIN);
@@ -187,8 +187,8 @@ struct PinIO
 
   // read() only when readable
   template <
-    PinMode M = MODE,
-    typename std::enable_if_t<PinModeTraits<M>::readable, int> = 0>
+    GpioMode M = MODE,
+    typename std::enable_if_t<GpioModeTraits<M>::readable, int> = 0>
   static value_type read()
   {
     return Traits::read(PIN);
@@ -196,8 +196,8 @@ struct PinIO
 
   // write() only when writable
   template <
-    PinMode M = MODE,
-    typename std::enable_if_t<PinModeTraits<M>::writable, int> = 0>
+    GpioMode M = MODE,
+    typename std::enable_if_t<GpioModeTraits<M>::writable, int> = 0>
   static void write(value_type v)
   {
     Traits::write(PIN, v);

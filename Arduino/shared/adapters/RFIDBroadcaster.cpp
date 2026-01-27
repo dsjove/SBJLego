@@ -1,9 +1,9 @@
 #include "RFIDBroadcaster.h"
 
-RFIDBroadcaster::RFIDBroadcaster(Scheduler& scheduler, BLEServiceRunner& ble, uint32_t number, int ss_pin, int rst_pin)
-: _rfid(number, ss_pin, rst_pin)
+RFIDBroadcaster::RFIDBroadcaster(Scheduler& scheduler, BLEServiceRunner& ble)
+: _rfid()
 , _idFeedbackChar(ble, "05000002", _rfid.lastID().encode())
-, _rfidTask(scheduler, _rfid.timing().taskFrequency, this)
+, _rfidTask(scheduler, 20, this)
 {
 }
 
@@ -17,7 +17,7 @@ void RFIDBroadcaster::begin()
 
 void RFIDBroadcaster::loop(Task&)
 {
-  const MFRC522Detector::RFID* detected = _rfid.loop();
+  const RFID* detected = _rfid.loop();
   if (detected)
   {
     auto encoded = detected->encode();
