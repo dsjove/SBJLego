@@ -1,4 +1,4 @@
-#include "MFRC522Detector.h"
+#include "RFIDDetector.h"
 
 void RFID::print() const
 {

@@ -1,8 +1,21 @@
 #pragma once
 
 #include "BLEUUID.h"
+#include <string>
 
 class BLEServiceRunner;
+
+static inline std::string writeIndex(const char * src, uint8_t value)
+{
+  static const char hex[16] = {
+    '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
+  };
+  std::string buf = src;
+  if (buf.size() < 8) buf.resize(8, '0');
+  buf[4] = hex[(value >> 4) & 0x0F];
+  buf[5] = hex[value & 0x0F];
+  return buf;
+}
 
 struct IDBTCharacteristic {
   const BLEUUID uuid; // Must remain in memory with characteristic
@@ -34,3 +47,4 @@ struct IDBTCharacteristic {
 	//TODO: use the UUID on eventHandler to route to a lambda extression
 	//Create a new static class for this so we don't multiple these constructors
 };
+

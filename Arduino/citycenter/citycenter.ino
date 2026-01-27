@@ -4,11 +4,11 @@
 #include "shared/ble/BLEServiceRunner.cpp"
 
 #include "shared/core/LegoPFIR.cpp"
-#include "shared/core/MFRC522Detector.cpp"
+#include "shared/core/RFIDDetector.cpp"
 
 #include "shared/adapters/MatrixR4.cpp"
 #include "shared/adapters/Lighting.cpp"
-#include "shared/adapters/RFIDBroadcaster.cpp"
+#include "shared/adapters/RFIDBroadcaster.h"
 #include "shared/adapters/LEGOPFTransmitter.cpp"
 
 #include <SPI.h>
@@ -17,7 +17,7 @@ Scheduler _runner;
 BLEServiceRunner _ble(_runner, "City Center");
 MatrixR4 _matrixR4(_ble, MatrixR4Value(true, true));
 Lighting _lighting(_runner, _ble, {{3, true}, {0, false}}, A0);
-RFIDBroadcaster _RFIDBroadcaster(_runner, _ble);
+RFIDBroadcaster<> _rfidBroadcaster(_runner, _ble);
 LEGOPFTransmitter _pfTransmitter(_runner, _ble, 7);
 
 constexpr int announceCount = 2;
@@ -45,7 +45,7 @@ void setup()
   _ble.begin();
   _matrixR4.begin();
   _lighting.begin();
-  _RFIDBroadcaster.begin();
+  _rfidBroadcaster.begin();
   _pfTransmitter.begin();
 
   announceTask.enable();

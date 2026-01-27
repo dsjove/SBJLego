@@ -9,13 +9,6 @@ HiLetgo 3pcs RFID Kit - Mifare RC522 RF IC Card Sensor Module + S50 Blank Card +
 Timeskey NFC 20 Pack Mifare Classic 1k NFC Tag RFID Sticker 13.56mhz - ISO14443A Smart 25mm Adhesive Tags
  */
 
-struct DefaultRFIDTiming
-{
-  static constexpr uint32_t cooldownMs     = 800;    // Tune for tag movement speed
-  static constexpr uint32_t reinitAfterMs  = 30000;  // MFRC522 goes bad after a while
-  static constexpr uint8_t  failResetCount = 5;      // Reset after repeated failures
-};
-
 struct RFID {
   using Encoded = std::array<uint8_t, 4 + 4 + 1 + 10>;
 
@@ -48,24 +41,30 @@ struct RFID {
   static void print(const Encoded& encoded);
 };
 
-template <
-  uint8_t Number,
-  uint8_t SsPin = 10,
-  uint8_t RstPin = 9,
-  typename TimingPolicy = DefaultRFIDTiming
->
-class MFRC522Detector {
+struct RFIDDetectorDefaultTraits {
+  static constexpr uint8_t Number = 0;
+  static constexpr uint8_t SsPin  = 10;
+  static constexpr uint8_t RstPin = 9;
+
+  static constexpr uint32_t loopFrequencyMs = 20;     // Recommended Task delay
+  static constexpr uint32_t cooldownMs      = 800;    // Tune for tag movement speed
+  static constexpr uint32_t reinitAfterMs   = 30000;  // MFRC522 goes bad after a while
+  static constexpr uint8_t  failResetCount  = 5;      // Reset after repeated failures
+};
+
+template <typename Traits = RFIDDetectorDefaultTraits>
+class RFIDDetector {
 public:
-  static constexpr uint8_t number  = Number;
-  static constexpr uint8_t ss_pin  = SsPin;
-  static constexpr uint8_t rst_pin = RstPin;
+  static constexpr uint8_t number  = Traits::Number;
+  static constexpr uint8_t ss_pin  = Traits::SsPin;
+  static constexpr uint8_t rst_pin = Traits::RstPin;
 
-  using Ss  = PinIO<SsPin, GpioMode::Reserved>;
-  using Rst = PinIO<RstPin, GpioMode::DigitalOut>;
+  using Ss  = PinIO<Traits::SsPin, GpioMode::Reserved>;
+  using Rst = PinIO<Traits::RstPin, GpioMode::DigitalOut>;
 
-  MFRC522Detector()
-  : _rfid(SsPin, RstPin)
-  , _lastID(Number)
+  RFIDDetector()
+  : _rfid(Traits::SsPin, Traits::RstPin)
+  , _lastID(Traits::Number)
   , _cooldownLimitMs(0)
   , _lastGoodReadMs(0)
   , _failReadCount(0)
@@ -84,14 +83,12 @@ public:
   const RFID* loop()
   {
     const uint32_t now = millis();
-
     // Re-init after long inactivity without a successful read
-    if (_lastGoodReadMs != 0 && (now - _lastGoodReadMs) > TimingPolicy::reinitAfterMs)
+    if (_lastGoodReadMs != 0 && (now - _lastGoodReadMs) > Traits::reinitAfterMs)
     {
       resetRc522();
       _lastGoodReadMs = now;
     }
-
     if (_rfid.PICC_IsNewCardPresent())
     {
       // Cooldown gate
@@ -99,7 +96,6 @@ public:
       {
         return nullptr;
       }
-
       if (_rfid.PICC_ReadCardSerial())
       {
         _lastGoodReadMs = now;
@@ -110,34 +106,28 @@ public:
         _rfid.PICC_HaltA();
         _rfid.PCD_StopCrypto1();
 
-        _cooldownLimitMs = now + TimingPolicy::cooldownMs;
-
+        _cooldownLimitMs = now + Traits::cooldownMs;
         return &_lastID;
       }
       else
       {
         Serial.println("RFID: Read Failed");
-
         _rfid.PCD_StopCrypto1();
         _rfid.PICC_HaltA();
-
         _failReadCount++;
-
-        if (_failReadCount >= TimingPolicy::failResetCount)
+        if (_failReadCount >= Traits::failResetCount)
         {
           Serial.println("RFID: Fail Count Reset");
           resetRc522();
         }
       }
     }
-
     return nullptr;
   }
 
 private:
   MFRC522 _rfid;
   RFID _lastID;
-
   uint32_t _cooldownLimitMs;
   uint32_t _lastGoodReadMs;
   uint8_t  _failReadCount;
@@ -148,7 +138,6 @@ private:
     delay(5);
     Rst::write(Level::High);
     delay(5);
-
     _rfid.PCD_Init();
     _rfid.PCD_SetAntennaGain(_rfid.RxGain_max);
     _failReadCount = 0;
