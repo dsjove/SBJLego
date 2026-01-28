@@ -76,7 +76,7 @@ public:
   void begin()
   {
     Rst::begin();
-    Rst::write(Level::High);
+    Rst::write(GpioLevel::High);
     _rfid.PCD_Init();
   }
 
@@ -134,9 +134,9 @@ private:
 
   void resetRc522()
   {
-    Rst::write(Level::Low);
+    Rst::write(GpioLevel::Low);
     delay(5);
-    Rst::write(Level::High);
+    Rst::write(GpioLevel::High);
     delay(5);
     _rfid.PCD_Init();
     _rfid.PCD_SetAntennaGain(_rfid.RxGain_max);

@@ -15,7 +15,7 @@
 
 Scheduler _runner;
 BLEServiceRunner _ble(_runner, "City Center");
-MatrixR4 _matrixR4(_ble, MatrixR4Value(true, true));
+MatrixR4 _matrixR4(_ble, true, true);
 Lighting _lighting(_runner, _ble, {{3, true}, {0, false}}, A0);
 RFIDBroadcaster<> _rfidBroadcaster(_runner, _ble);
 LEGOPFTransmitter _pfTransmitter(_runner, _ble, 7);

@@ -4,7 +4,7 @@
 #include <type_traits>
 
 // -------------------- Semantic digital level --------------------
-enum class Level : uint8_t
+enum class GpioLevel : uint8_t
 {
   Low  = 0,
   High = 1
@@ -24,7 +24,7 @@ enum class GpioMode : uint8_t
 // -------------------- Architecture-dependent scalar types --------------------
 struct ArchTypes
 {
-  using digital_type = Level;
+  using digital_type = GpioLevel;
 
 #if defined(ARDUINO_ARCH_AVR)
   using analog_type = uint16_t;
@@ -78,7 +78,7 @@ struct GpioModeTraits<GpioMode::DigitalIn>
 
   static value_type read(uint8_t pin)
   {
-    return digitalRead(pin) ? Level::High : Level::Low;
+    return digitalRead(pin) ? GpioLevel::High : GpioLevel::Low;
   }
 };
 
@@ -99,7 +99,7 @@ struct GpioModeTraits<GpioMode::DigitalInPullup>
 
   static value_type read(uint8_t pin)
   {
-    return digitalRead(pin) ? Level::High : Level::Low;
+    return digitalRead(pin) ? GpioLevel::High : GpioLevel::Low;
   }
 };
 
@@ -141,7 +141,7 @@ struct GpioModeTraits<GpioMode::DigitalOut>
 
   static void write(uint8_t pin, value_type v)
   {
-    digitalWrite(pin, (v == Level::High) ? HIGH : LOW);
+    digitalWrite(pin, (v == GpioLevel::High) ? HIGH : LOW);
   }
 };
 
@@ -166,11 +166,10 @@ struct GpioModeTraits<GpioMode::PWMOut>
   }
 };
 
-// -------------------- PinIO (direction + ownership locked via traits) --------------------
 template <uint8_t PIN, GpioMode MODE>
 struct PinIO
 {
-  static constexpr uint8_t pin  = PIN;
+  static constexpr uint8_t pin = PIN;
   static constexpr GpioMode mode = MODE;
 
   using Traits = GpioModeTraits<MODE>;

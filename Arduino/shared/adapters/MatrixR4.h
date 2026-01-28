@@ -27,30 +27,18 @@ public:
   static constexpr Value allOn  = { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu };
   static constexpr Value circle = { 0x06009010u, 0x82042041u, 0x08090060u };
 
-  MatrixR4Value(bool flipY = false, bool flipX = false, bool invert = false)
-    : _value(allOff)
-    , _flipY(flipY)
-    , _flipX(flipX)
-    , _invert(invert)
+  MatrixR4Value()
+  : _value(allOff)
   {
   }
 
-  MatrixR4Value(const Value& value, bool flipY = false, bool flipX = false, bool invert = false)
-    : MatrixR4Value(flipY, flipX, invert)
-  {
-    update(value);
-  }
-
-  bool update(const Value& input);
+  bool update(const Value& input, bool flipY = false, bool flipX = false, bool invert = false);
 
   inline const uint32_t* data() const { return _value.data(); }
   inline size_t size() const { return sizeof(_value); }
 
 private:
   Value _value;
-  const bool _flipY;
-  const bool _flipX;
-  const bool _invert;
 
   inline static int getIndex(int y, int x)
   {
@@ -87,14 +75,17 @@ class MatrixR4
 public:
   using Value = MatrixR4Value;
 
-  MatrixR4(BLEServiceRunner& ble, const Value& value = MatrixR4Value());
+  MatrixR4(BLEServiceRunner& ble, bool flipY = false, bool flipX = false, bool invert = false);
 
   void begin();
 
-  void update(const MatrixR4Value::Value& value);
+  void update(const MatrixR4Value::Value& value, bool writeBLE = true);
 
 private:
   Value _current;
+  const bool _flipY;
+  const bool _flipX;
+  const bool _invert;
 
   IDBTCharacteristic _displayChar;
   static void bleUpdate(BLEDevice device, BLECharacteristic characteristic);
