@@ -4,7 +4,7 @@ BLEServiceRunner::BLEServiceRunner(Scheduler& scheduler, const std::string& serv
 : _name(serviceName)
 , _serviceId(btutil::makeUuidWithService(serviceName, overrideId))
 , _bleService(_serviceId.data())
-, _bluetoothTask(scheduler, pollMS, this)
+, _bluetoothTask(pollMS, TASK_FOREVER, &loop, &scheduler, true)
 {
 }
 
@@ -42,7 +42,7 @@ void BLEServiceRunner::begin()
   }
 }
 
-void BLEServiceRunner::loop(Task&)
+void BLEServiceRunner::loop()
 {
   BLE.poll();
 }
