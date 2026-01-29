@@ -2,8 +2,7 @@
 #include <TaskScheduler.h>
 
 //Buses
-#include <Adafruit_MCP23X17.h>
-#include "drivers/MCP23017Gpio.h"
+#include "drivers/Mcp23017Device.h"
 #include "drivers/SPIHardware.h"
 #include "drivers/I2CHardware.h"
 
@@ -30,7 +29,7 @@
 
 const std::string serviceName = "The Jove Express";
 Scheduler _taskScheduler;
-using expander = MCP23017Gpio<>;
+using expander = Mcp23017Device<>;
 namespace sdcard = TheSDCard;
 TheBLE _ble(_taskScheduler, serviceName);
 TheWifi _wifi(_taskScheduler, serviceName);
@@ -39,11 +38,11 @@ struct MotorPins
 {
   inline static constexpr PinIO<D3, GpioMode::PWMOut> MotorPwma{};
   inline static constexpr PinIO<A1, GpioMode::PWMOut> MotorPwmb{};
-  inline static constexpr PinIO<0, GpioMode::DigitalOut, Mcp23017Backend> MotorAin1{}; // GPA0
-  inline static constexpr PinIO<1, GpioMode::DigitalOut, Mcp23017Backend> MotorAin2{}; // GPA1
-  inline static constexpr PinIO<8, GpioMode::DigitalOut, Mcp23017Backend> MotorBin1{}; // GPB0
-  inline static constexpr PinIO<4, GpioMode::DigitalOut, Mcp23017Backend> MotorStby{}; // GPA4
-  inline static constexpr PinIO<9, GpioMode::DigitalOut, Mcp23017Backend> MotorBin2{}; // GPB1
+  inline static constexpr PinIO<0, GpioMode::DigitalOut, Mcp23017PinIO> MotorAin1{}; // GPA0
+  inline static constexpr PinIO<1, GpioMode::DigitalOut, Mcp23017PinIO> MotorAin2{}; // GPA1
+  inline static constexpr PinIO<8, GpioMode::DigitalOut, Mcp23017PinIO> MotorBin1{}; // GPB0
+  inline static constexpr PinIO<4, GpioMode::DigitalOut, Mcp23017PinIO> MotorStby{}; // GPA4
+  inline static constexpr PinIO<9, GpioMode::DigitalOut, Mcp23017PinIO> MotorBin2{}; // GPB1
 };
 using motor = TB6612Motor<MotorPins>;
 

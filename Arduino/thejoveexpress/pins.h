@@ -1,5 +1,6 @@
 #pragma once
 #include "shared/core/PinIO.h"
+#include "drivers/Mcp23017PinIO.h"
 
 namespace pins
 {
@@ -19,7 +20,7 @@ namespace pins
   inline constexpr PinIO<A3, GpioMode::DigitalOut> CarLightEnable{};
 
   // ---- Dock detect ----
-  inline constexpr PinIO<15, GpioMode::DigitalIn, Mcp23017Backend> DockDetect{}; // GPB7
+  inline constexpr PinIO<15, GpioMode::DigitalIn, Mcp23017PinIO> DockDetect{}; // GPB7
 
   // ================= Camera data pins =================
   // OV2640 Y2–Y9

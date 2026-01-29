@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <Adafruit_MCP23X17.h>
 
-#include "../shared/core/PinIO.h"
+#include "Mcp23017PinIO.h"
 #include "I2CHardware.h"
 
 template<
@@ -13,9 +13,10 @@ template<
   typename WireT = TwoWire,
   WireT& WireRef = Wire
 >
-struct MCP23017Gpio
+struct Mcp23017Device
 {
-  static constexpr uint8_t address = uint8_t(0x20 | (uint8_t(A2) << 2) | (uint8_t(A1) << 1) | uint8_t(A0));
+  static constexpr uint8_t address =
+    uint8_t(0x20 | (uint8_t(A2) << 2) | (uint8_t(A1) << 1) | uint8_t(A0));
 
   static inline Adafruit_MCP23X17 device{};
 
@@ -29,7 +30,7 @@ struct MCP23017Gpio
       return false;
     }
 
-    Mcp23017Backend::attach(device);
+    Mcp23017PinIO::attach(device);
     return true;
   }
 };

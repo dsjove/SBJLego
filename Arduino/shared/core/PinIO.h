@@ -2,7 +2,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <Wire.h>
 #include <type_traits>
 
 // ==================== Semantic digital level ====================
@@ -31,15 +30,12 @@ struct ArchTypes
 #if defined(ARDUINO_ARCH_AVR)
   using analog_type = uint16_t;
   using pwm_type    = uint8_t;
-
 #elif defined(ARDUINO_ARCH_RENESAS)
   using analog_type = uint16_t;
   using pwm_type    = uint8_t;
-
 #elif defined(ARDUINO_ARCH_ESP32)
   using analog_type = uint16_t;
   using pwm_type    = uint16_t;
-
 #else
   using analog_type = uint16_t;
   using pwm_type    = uint16_t;
@@ -51,6 +47,9 @@ struct ArduinoGpioBackend
 {
   static constexpr bool supports_analog = true;
   static constexpr bool supports_pwm    = true;
+
+  // Optional hook (PinIO will call if present)
+  static constexpr bool ready() { return true; }
 
   static void begin_digital_in(uint8_t pin)        { pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { pinMode(pin, INPUT_PULLUP); }
@@ -79,88 +78,25 @@ struct ArduinoGpioBackend
   }
 };
 
-#ifdef ADAFRUIT_MCP23X17_H
-  #include <Adafruit_MCP23X17.h>
-#endif
-
-// -------------------- MCP23017 backend (optional) --------------------
-// Only compiled if Adafruit_MCP23X17 is available (include order matters).
-#if defined(ADAFRUIT_MCP23X17_H) || __has_include(<Adafruit_MCP23X17.h>)
-  #if !defined(ADAFRUIT_MCP23X17_H)
-    #include <Adafruit_MCP23X17.h>
-  #endif
-
-struct Mcp23017Backend
-{
-  static constexpr bool supports_analog = false;
-  static constexpr bool supports_pwm    = false;
-
-  static inline Adafruit_MCP23X17* dev = nullptr;
-
-  static void attach(Adafruit_MCP23X17& d) { dev = &d; }
-  static bool attached() { return dev != nullptr; }
-
-  static void begin_digital_in(uint8_t pin)
-  {
-    dev->pinMode(pin, INPUT);
-  }
-
-  static void begin_digital_in_pullup(uint8_t pin)
-  {
-    dev->pinMode(pin, INPUT_PULLUP);
-  }
-
-  static void begin_analog_in(uint8_t /*pin*/) {}
-
-  static void begin_digital_out(uint8_t pin)
-  {
-    dev->pinMode(pin, OUTPUT);
-  }
-
-  static void begin_pwm_out(uint8_t /*pin*/) {}
-
-  static GpioLevel read_digital(uint8_t pin)
-  {
-    return dev->digitalRead(pin) ? GpioLevel::High : GpioLevel::Low;
-  }
-
-  static ArchTypes::analog_type read_analog(uint8_t /*pin*/)
-  {
-    return 0;
-  }
-
-  static void write_digital(uint8_t pin, GpioLevel v)
-  {
-    dev->digitalWrite(pin, (v == GpioLevel::High) ? HIGH : LOW);
-  }
-
-  static void write_pwm(uint8_t /*pin*/, ArchTypes::pwm_type /*v*/) {}
-};
-#endif
-
 // ============================================================================
 // Mode traits
 // ============================================================================
 template <GpioMode, typename Backend>
 struct GpioModeTraits;
 
-// ---- Reserved ----
 template <typename Backend>
 struct GpioModeTraits<GpioMode::Reserved, Backend>
 {
   using value_type = void;
-
   static constexpr bool beginable = false;
   static constexpr bool readable  = false;
   static constexpr bool writable  = false;
 };
 
-// ---- Digital input ----
 template <typename Backend>
 struct GpioModeTraits<GpioMode::DigitalIn, Backend>
 {
   using value_type = ArchTypes::digital_type;
-
   static constexpr bool beginable = true;
   static constexpr bool readable  = true;
   static constexpr bool writable  = false;
@@ -169,12 +105,10 @@ struct GpioModeTraits<GpioMode::DigitalIn, Backend>
   static value_type read(uint8_t pin) { return Backend::read_digital(pin); }
 };
 
-// ---- Digital input w/ pullup ----
 template <typename Backend>
 struct GpioModeTraits<GpioMode::DigitalInPullup, Backend>
 {
   using value_type = ArchTypes::digital_type;
-
   static constexpr bool beginable = true;
   static constexpr bool readable  = true;
   static constexpr bool writable  = false;
@@ -183,12 +117,10 @@ struct GpioModeTraits<GpioMode::DigitalInPullup, Backend>
   static value_type read(uint8_t pin) { return Backend::read_digital(pin); }
 };
 
-// ---- Analog input ----
 template <typename Backend>
 struct GpioModeTraits<GpioMode::AnalogIn, Backend>
 {
   using value_type = ArchTypes::analog_type;
-
   static constexpr bool beginable = true;
   static constexpr bool readable  = true;
   static constexpr bool writable  = false;
@@ -197,12 +129,10 @@ struct GpioModeTraits<GpioMode::AnalogIn, Backend>
   static value_type read(uint8_t pin) { return Backend::read_analog(pin); }
 };
 
-// ---- Digital output ----
 template <typename Backend>
 struct GpioModeTraits<GpioMode::DigitalOut, Backend>
 {
   using value_type = ArchTypes::digital_type;
-
   static constexpr bool beginable = true;
   static constexpr bool readable  = false;
   static constexpr bool writable  = true;
@@ -211,12 +141,10 @@ struct GpioModeTraits<GpioMode::DigitalOut, Backend>
   static void write(uint8_t pin, value_type v) { Backend::write_digital(pin, v); }
 };
 
-// ---- PWM output ----
 template <typename Backend>
 struct GpioModeTraits<GpioMode::PWMOut, Backend>
 {
   using value_type = ArchTypes::pwm_type;
-
   static constexpr bool beginable = true;
   static constexpr bool readable  = false;
   static constexpr bool writable  = true;
@@ -226,12 +154,37 @@ struct GpioModeTraits<GpioMode::PWMOut, Backend>
 };
 
 // ============================================================================
+// Backend readiness detection (optional hook)
+// ============================================================================
+namespace pinio_detail
+{
+  template <typename B, typename = void>
+  struct has_ready : std::false_type {};
+
+  template <typename B>
+  struct has_ready<B, std::void_t<decltype(B::ready())>> : std::true_type {};
+
+  template <typename B>
+  static constexpr bool backend_ready()
+  {
+    if constexpr (has_ready<B>::value)
+    {
+      return static_cast<bool>(B::ready());
+    }
+    else
+    {
+      return true;
+    }
+  }
+}
+
+// ============================================================================
 // PinIO
 // ============================================================================
 template <uint8_t PIN, GpioMode MODE, typename Backend = ArduinoGpioBackend>
 struct PinIO
 {
-  static constexpr uint8_t pin  = PIN;
+  static constexpr uint8_t pin   = PIN;
   static constexpr GpioMode mode = MODE;
 
   using Traits     = GpioModeTraits<MODE, Backend>;
@@ -242,21 +195,15 @@ private:
   static constexpr bool wants_pwm    = (MODE == GpioMode::PWMOut);
 
 public:
-  // begin()
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<GpioModeTraits<M, Backend>::beginable, int> = 0>
   static void begin()
   {
-#if defined(ADAFRUIT_MCP23X17_H) || __has_include(<Adafruit_MCP23X17.h>)
-    if constexpr (std::is_same_v<Backend, Mcp23017Backend>)
+    if (!pinio_detail::backend_ready<Backend>())
     {
-      if (!Backend::attached())
-      {
-        return;
-      }
+      return;
     }
-#endif
 
     static_assert(!(wants_analog && !Backend::supports_analog),
                   "Selected backend does not support AnalogIn");
@@ -266,7 +213,6 @@ public:
     Traits::begin(PIN);
   }
 
-  // begin(initial) — outputs only
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<
@@ -275,15 +221,10 @@ public:
       int> = 0>
   static void begin(typename GpioModeTraits<M, Backend>::value_type initial)
   {
-#if defined(ADAFRUIT_MCP23X17_H) || __has_include(<Adafruit_MCP23X17.h>)
-    if constexpr (std::is_same_v<Backend, Mcp23017Backend>)
+    if (!pinio_detail::backend_ready<Backend>())
     {
-      if (!Backend::attached())
-      {
-        return;
-      }
+      return;
     }
-#endif
 
     static_assert(!(wants_analog && !Backend::supports_analog),
                   "Selected backend does not support AnalogIn");
@@ -294,24 +235,34 @@ public:
     GpioModeTraits<M, Backend>::write(PIN, initial);
   }
 
-  // read()
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<GpioModeTraits<M, Backend>::readable, int> = 0>
   static typename GpioModeTraits<M, Backend>::value_type read()
   {
+    if (!pinio_detail::backend_ready<Backend>())
+    {
+      // For “not ready”, return a sensible zero value for the mode.
+      // You can also choose to assert/abort in debug builds.
+      return {};
+    }
+
     static constexpr bool wants_analog_m = (M == GpioMode::AnalogIn);
     static_assert(!(wants_analog_m && !Backend::supports_analog),
                   "Selected backend does not support AnalogIn");
     return GpioModeTraits<M, Backend>::read(PIN);
   }
 
-  // write()
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<GpioModeTraits<M, Backend>::writable, int> = 0>
   static void write(typename GpioModeTraits<M, Backend>::value_type v)
   {
+    if (!pinio_detail::backend_ready<Backend>())
+    {
+      return;
+    }
+
     static constexpr bool wants_pwm_m = (M == GpioMode::PWMOut);
     static_assert(!(wants_pwm_m && !Backend::supports_pwm),
                   "Selected backend does not support PWMOut");
