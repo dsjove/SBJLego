@@ -8,6 +8,7 @@
 
 #include "pins.h"
 
+//LSM6DS3TRC
 namespace motion
 {
   inline Adafruit_LSM6DS3TRC device;
