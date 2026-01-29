@@ -110,20 +110,14 @@ struct Mcp23017Backend
     dev->pinMode(pin, INPUT_PULLUP);
   }
 
-  static void begin_analog_in(uint8_t /*pin*/)
-  {
-    // not supported
-  }
+  static void begin_analog_in(uint8_t /*pin*/) {}
 
   static void begin_digital_out(uint8_t pin)
   {
     dev->pinMode(pin, OUTPUT);
   }
 
-  static void begin_pwm_out(uint8_t /*pin*/)
-  {
-    // not supported
-  }
+  static void begin_pwm_out(uint8_t /*pin*/) {}
 
   static GpioLevel read_digital(uint8_t pin)
   {
@@ -140,15 +134,12 @@ struct Mcp23017Backend
     dev->digitalWrite(pin, (v == GpioLevel::High) ? HIGH : LOW);
   }
 
-  static void write_pwm(uint8_t /*pin*/, ArchTypes::pwm_type /*v*/)
-  {
-    // not supported
-  }
+  static void write_pwm(uint8_t /*pin*/, ArchTypes::pwm_type /*v*/) {}
 };
-#endif // MCP23017 backend
+#endif
 
 // ============================================================================
-// Mode traits (now backend-aware)
+// Mode traits
 // ============================================================================
 template <GpioMode, typename Backend>
 struct GpioModeTraits;
@@ -235,7 +226,7 @@ struct GpioModeTraits<GpioMode::PWMOut, Backend>
 };
 
 // ============================================================================
-// PinIO (now backend-selectable; defaults to ArduinoGpioBackend)
+// PinIO
 // ============================================================================
 template <uint8_t PIN, GpioMode MODE, typename Backend = ArduinoGpioBackend>
 struct PinIO
@@ -247,26 +238,21 @@ struct PinIO
   using value_type = typename Traits::value_type;
 
 private:
-  // Compile-time guardrails for backends that don't support features.
   static constexpr bool wants_analog = (MODE == GpioMode::AnalogIn);
   static constexpr bool wants_pwm    = (MODE == GpioMode::PWMOut);
 
 public:
-  // begin() only when beginable
+  // begin()
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<GpioModeTraits<M, Backend>::beginable, int> = 0>
   static void begin()
   {
-    // If backend supports "attach" semantics, you can optionally assert here.
 #if defined(ADAFRUIT_MCP23X17_H) || __has_include(<Adafruit_MCP23X17.h>)
     if constexpr (std::is_same_v<Backend, Mcp23017Backend>)
     {
-      // Runtime check: ensure attached before use.
-      // (No Serial dependency here; just a hard fail if misused.)
       if (!Backend::attached())
       {
-        // Avoid UB; do nothing if not attached.
         return;
       }
     }
@@ -280,7 +266,35 @@ public:
     Traits::begin(PIN);
   }
 
-  // read() only when readable
+  // begin(initial) — outputs only
+  template <
+    GpioMode M = MODE,
+    typename std::enable_if_t<
+      GpioModeTraits<M, Backend>::beginable &&
+      GpioModeTraits<M, Backend>::writable,
+      int> = 0>
+  static void begin(typename GpioModeTraits<M, Backend>::value_type initial)
+  {
+#if defined(ADAFRUIT_MCP23X17_H) || __has_include(<Adafruit_MCP23X17.h>)
+    if constexpr (std::is_same_v<Backend, Mcp23017Backend>)
+    {
+      if (!Backend::attached())
+      {
+        return;
+      }
+    }
+#endif
+
+    static_assert(!(wants_analog && !Backend::supports_analog),
+                  "Selected backend does not support AnalogIn");
+    static_assert(!(wants_pwm && !Backend::supports_pwm),
+                  "Selected backend does not support PWMOut");
+
+    Traits::begin(PIN);
+    GpioModeTraits<M, Backend>::write(PIN, initial);
+  }
+
+  // read()
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<GpioModeTraits<M, Backend>::readable, int> = 0>
@@ -292,7 +306,7 @@ public:
     return GpioModeTraits<M, Backend>::read(PIN);
   }
 
-  // write() only when writable
+  // write()
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<GpioModeTraits<M, Backend>::writable, int> = 0>

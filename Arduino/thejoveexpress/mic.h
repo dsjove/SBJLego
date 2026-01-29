@@ -7,10 +7,18 @@
 #pragma GCC diagnostic ignored "-Wcpp"
 #include <driver/i2s.h>
 
-#include "pins.h"
+#include "shared/core/PinIO.h"
 
 namespace mic
 {
+  // ---- Sense built-in PDM Microphone ----
+  // I2S clock (BCLK / PDM CLK)
+  inline constexpr PinIO<42, GpioMode::Reserved> MicBclk{};
+  // I2S word select (LRCLK / PDM WS)
+  inline constexpr PinIO<41, GpioMode::Reserved> MicLrc{};
+  // I2S data in (PDM DATA)
+  inline constexpr PinIO<2,  GpioMode::Reserved> MicDin{};
+
   namespace device
   {
     inline constexpr i2s_port_t port = I2S_NUM_1; // keep separate from your MAX98357A TX on I2S_NUM_0
@@ -66,10 +74,10 @@ namespace mic
 
     // For PDM RX: ESP-IDF uses "ws" as CLK and "data_in" as DATA
     i2s_pin_config_t pins_cfg {};
-    pins_cfg.bck_io_num   = pins::MicBclk.pin;
-    pins_cfg.ws_io_num    = pins::MicLrc.pin;
+    pins_cfg.bck_io_num   = MicBclk.pin;
+    pins_cfg.ws_io_num    = MicLrc.pin;
     pins_cfg.data_out_num = I2S_PIN_NO_CHANGE;
-    pins_cfg.data_in_num  = pins::MicDin.pin;
+    pins_cfg.data_in_num  = MicDin.pin;
     pins_cfg.mck_io_num   = I2S_PIN_NO_CHANGE;
 
     err = i2s_set_pin(device::port, &pins_cfg);

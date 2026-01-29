@@ -7,6 +7,7 @@
 #include <Adafruit_VEML7700.h>
 
 #include "pins.h"
+#include "drivers/I2CHardware.h"
 
 // Lighting subsystem
 // - Headlights (PWM MOSFET): pins::HeadLightPwm
@@ -35,17 +36,12 @@ namespace lighting
   inline void begin(Scheduler& sched)
   {
     // --- Output pins ---
-    pins::HeadLightPwm.begin();
-    pins::CarLightPwm.begin();
-    pins::CarLightEnable.begin();
-
-    // Known safe state: lights off
-    pins::HeadLightPwm.write(0);
-    pins::CarLightPwm.write(0);
-    pins::CarLightEnable.write(GpioLevel::Low);
+    pins::HeadLightPwm.begin(0);
+    pins::CarLightPwm.begin(0);
+    pins::CarLightEnable.begin(GpioLevel::Low);
 
     // --- Ambient sensor ---
-    pins::ensure_i2c_begun();
+    I2CHardware::begin();
 
     if (!device.begin())
     {

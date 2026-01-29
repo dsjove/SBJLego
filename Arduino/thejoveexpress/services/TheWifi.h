@@ -13,12 +13,14 @@ public:
     Scheduler& sched,
     const std::string& name,
     int connectTimeoutSeconds = 15,
-    int portalTimeoutSeconds  = 180)
+    int portalTimeoutSeconds  = 180,
+    bool getTime = true)
   : _name(name)
   , _connectTimeoutSeconds(connectTimeoutSeconds)
   , _portalTimeoutSeconds(portalTimeoutSeconds)
   , _attempted(false)
   , _ok(false)
+  , _getTime(getTime)
   // one time task for auto connect
   {
   }
@@ -33,6 +35,7 @@ private:
   const int _portalTimeoutSeconds;
   bool _attempted;
   bool _ok;
+  bool _getTime;
   Task _autoConnect;
 
   WiFiManager manager;
@@ -53,7 +56,10 @@ private:
       Serial.println(WiFi.localIP());
 
       // Initialize SNTP time on successful WiFi connection (if not already done)
-      TheTime::reinitTime();
+      if (_getTime)
+      {
+        TheTime::reinitTime();
+	  }
 
     } else {
       Serial.println("WiFi not connected (portal timed out or connect failed)");

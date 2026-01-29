@@ -7,6 +7,7 @@
 #include <Adafruit_LSM6DS3TRC.h>
 
 #include "pins.h"
+#include "drivers/I2CHardware.h"
 
 //LSM6DS3TRC
 namespace motion
@@ -29,7 +30,7 @@ namespace motion
 
   inline void begin(Scheduler& sched)
   {
-    pins::ensure_i2c_begun();
+    I2CHardware::begin();
 
     if (!device.begin_I2C())
     {

@@ -4,7 +4,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 
-#include "pins.h"
+#include "drivers/SPIHardware.h"
 
 namespace display
 {
@@ -19,7 +19,7 @@ namespace display
     pins::TftCs.begin();
     pins::TftDc.begin();
 
-    pins::ensure_spi_begun();
+    SPIHardware::begin();
 
     // adjust to your exact panel and position
     device.init(240, 240);
