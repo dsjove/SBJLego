@@ -4,8 +4,8 @@
 //Buses
 #include "drivers/Mcp23017PinIO.h"
 #include "drivers/Mcp23017Device.h"
-#include "drivers/SPIHardware.h"
-#include "drivers/I2CHardware.h"
+#include "core/SPIHardware.h"
+#include "core/I2CHardware.h"
 
 // Communications
 #include <NimBLEDevice.h> //Designates BLE impl

@@ -4,8 +4,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 
-#include "shared/core/PinIO.h"
-#include "drivers/SPIHardware.h"
+#include "core/PinIO.h"
+#include "core/SPIHardware.h"
 
 namespace display
 {

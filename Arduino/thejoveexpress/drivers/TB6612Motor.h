@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../shared/core/PinIO.h"
+#include "../core/PinIO.h"
 
 template <class Traits>
 struct TB6612Motor

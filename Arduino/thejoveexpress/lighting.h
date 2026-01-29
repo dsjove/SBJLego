@@ -6,8 +6,8 @@
 
 #include <Adafruit_VEML7700.h>
 
-#include "shared/core/PinIO.h"
-#include "drivers/I2CHardware.h"
+#include "core/PinIO.h"
+#include "core/I2CHardware.h"
 
 // Lighting subsystem
 // - Headlights (PWM MOSFET): pins::HeadLightPwm

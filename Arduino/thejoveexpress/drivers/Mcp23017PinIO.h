@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include <Adafruit_MCP23X17.h>
-#include "../shared/core/PinIO.h"
+#include "../core/PinIO.h"
 
 struct Mcp23017PinIO
 {

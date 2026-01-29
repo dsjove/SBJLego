@@ -4,7 +4,7 @@
 #include <Adafruit_MCP23X17.h>
 
 #include "Mcp23017PinIO.h"
-#include "I2CHardware.h"
+#include "../core/I2CHardware.h"
 
 template<
   bool A0 = false,
