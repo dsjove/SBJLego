@@ -10,7 +10,7 @@ namespace motor
   {
     // MCU PWM pins
     pins::MotorPwma.begin();
-    pins::MotorPwmb.begin();   // safe even if channel B unused
+    pins::MotorPwmb.begin();
 
     // Expander-backed control pins
     pins::MotorAin1.begin();
