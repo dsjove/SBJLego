@@ -3,17 +3,19 @@
 #include <Arduino.h>
 #include <TaskScheduler.h>
 
-#include "pins.h"
+#include "drivers/Mcp23017PinIO.h"
 
 namespace docking
 {
+  inline constexpr PinIO<15, GpioMode::DigitalIn, Mcp23017PinIO> DockDetect{}; // GPB7
+  
   // Cached raw level + convenience bool
   inline volatile GpioLevel dockLevel = GpioLevel::Low;
   inline volatile bool isDocked  = false;
 
   inline void _tick()
   {
-    const auto v = pins::DockDetect.read();
+    const auto v = DockDetect.read();
     dockLevel = v;
     isDocked  = (v == GpioLevel::High);
   }
@@ -22,7 +24,7 @@ namespace docking
 
   inline void begin(Scheduler& sched)
   {
-    pins::DockDetect.begin();
+    DockDetect.begin();
     sched.addTask(task);
     task.enable();
   }

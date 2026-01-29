@@ -6,7 +6,6 @@
 
 #include <Adafruit_LSM6DS3TRC.h>
 
-#include "pins.h"
 #include "drivers/I2CHardware.h"
 
 //LSM6DS3TRC

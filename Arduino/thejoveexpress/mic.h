@@ -13,11 +13,11 @@ namespace mic
 {
   // ---- Sense built-in PDM Microphone ----
   // I2S clock (BCLK / PDM CLK)
-  inline constexpr PinIO<42, GpioMode::Reserved> MicBclk{};
+  inline constexpr PinIO<42, GpioMode::Delegated> MicBclk{};
   // I2S word select (LRCLK / PDM WS)
-  inline constexpr PinIO<41, GpioMode::Reserved> MicLrc{};
+  inline constexpr PinIO<41, GpioMode::Delegated> MicLrc{};
   // I2S data in (PDM DATA)
-  inline constexpr PinIO<2,  GpioMode::Reserved> MicDin{};
+  inline constexpr PinIO<2,  GpioMode::Delegated> MicDin{};
 
   namespace device
   {

@@ -59,7 +59,7 @@ public:
   static constexpr uint8_t ss_pin  = Traits::SsPin;
   static constexpr uint8_t rst_pin = Traits::RstPin;
 
-  using Ss  = PinIO<Traits::SsPin, GpioMode::Reserved>;
+  using Ss  = PinIO<Traits::SsPin, GpioMode::Delegated>;
   using Rst = PinIO<Traits::RstPin, GpioMode::DigitalOut>;
 
   RFIDDetector()

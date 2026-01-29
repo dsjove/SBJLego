@@ -7,8 +7,8 @@
 
 namespace I2CHardware
 {
-  inline constexpr PinIO<D4, GpioMode::Reserved> I2cSda{};
-  inline constexpr PinIO<D5, GpioMode::Reserved> I2cScl{};
+  inline constexpr PinIO<D4, GpioMode::Delegated> I2cSda{};
+  inline constexpr PinIO<D5, GpioMode::Delegated> I2cScl{};
 
   inline void begin()
   {

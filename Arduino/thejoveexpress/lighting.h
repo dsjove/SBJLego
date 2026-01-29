@@ -6,7 +6,7 @@
 
 #include <Adafruit_VEML7700.h>
 
-#include "pins.h"
+#include "shared/core/PinIO.h"
 #include "drivers/I2CHardware.h"
 
 // Lighting subsystem
@@ -18,6 +18,10 @@
 
 namespace lighting
 {
+  inline constexpr PinIO<A0, GpioMode::PWMOut> HeadLightPwm{};
+  inline constexpr PinIO<A2, GpioMode::PWMOut> CarLightPwm{};
+  inline constexpr PinIO<A3, GpioMode::DigitalOut> CarLightEnable{};
+
   // ---- Ambient sensor device ----
   inline Adafruit_VEML7700 device;
 
@@ -36,9 +40,9 @@ namespace lighting
   inline void begin(Scheduler& sched)
   {
     // --- Output pins ---
-    pins::HeadLightPwm.begin(0);
-    pins::CarLightPwm.begin(0);
-    pins::CarLightEnable.begin(GpioLevel::Low);
+    HeadLightPwm.begin(0);
+    CarLightPwm.begin(0);
+    CarLightEnable.begin(GpioLevel::Low);
 
     // --- Ambient sensor ---
     I2CHardware::begin();

@@ -2,12 +2,13 @@
 #include <TaskScheduler.h>
 
 //Buses
+#include "drivers/Mcp23017PinIO.h"
 #include "drivers/Mcp23017Device.h"
 #include "drivers/SPIHardware.h"
 #include "drivers/I2CHardware.h"
 
 // Communications
-#include <NimBLEDevice.h> //Designates service
+#include <NimBLEDevice.h> //Designates BLE impl
 #include "services/TheBLE.h"
 #include "services/TheTime.h"
 #include "services/TheWifi.h"
@@ -20,12 +21,14 @@
 // Motor
 #include "drivers/TB6612Motor.h"
 #include "docking.h"
+
 // Environment
 #include "motion.h"
 #include "lighting.h"
+
 // Display
 #include "display.h"
-#include "audio.h"
+#include "MAX98357AAudio.h"
 
 const std::string serviceName = "The Jove Express";
 Scheduler _taskScheduler;
@@ -33,6 +36,7 @@ using expander = Mcp23017Device<>;
 namespace sdcard = TheSDCard;
 TheBLE _ble(_taskScheduler, serviceName);
 TheWifi _wifi(_taskScheduler, serviceName);
+namespace audio = MAX98357AAudio;
 
 struct MotorPins
 {

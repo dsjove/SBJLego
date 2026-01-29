@@ -26,12 +26,12 @@ struct Mcp23017PinIO
     return dev->digitalRead(pin) ? GpioLevel::High : GpioLevel::Low;
   }
 
-  static ArchTypes::analog_type read_analog(uint8_t /*pin*/) { return 0; }
+  static GpioArchTypes::analog_type read_analog(uint8_t /*pin*/) { return 0; }
 
   static void write_digital(uint8_t pin, GpioLevel v)
   {
     dev->digitalWrite(pin, (v == GpioLevel::High) ? HIGH : LOW);
   }
 
-  static void write_pwm(uint8_t /*pin*/, ArchTypes::pwm_type /*v*/) {}
+  static void write_pwm(uint8_t /*pin*/, GpioArchTypes::pwm_type /*v*/) {}
 };

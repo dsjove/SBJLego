@@ -6,7 +6,7 @@
 #include <driver/i2s.h>
 #pragma GCC diagnostic pop
 
-#include "pins.h"
+#include "shared/core/PinIO.h"
 
 // Audio output: MAX98357A I2S DAC/amp
 // Target: Seeed XIAO ESP32S3 Sense
@@ -14,8 +14,12 @@
 // Setup-only: installs/configures ESP32 I2S TX and routes BCLK/LRCK/DIN pins.
 // No playback/business logic included.
 
-namespace audio
+namespace MAX98357AAudio
 {
+  inline constexpr PinIO<D2, GpioMode::DigitalOut> I2sDin{};
+  inline constexpr PinIO<D6, GpioMode::DigitalOut> I2sBclk{};
+  inline constexpr PinIO<D7, GpioMode::DigitalOut> I2sLrc{};
+
   struct Config
   {
     static constexpr i2s_port_t Port = I2S_NUM_0;
@@ -74,9 +78,9 @@ namespace audio
     }
 
     i2s_pin_config_t pins_cfg{};
-    pins_cfg.bck_io_num   = pins::I2sBclk.pin;
-    pins_cfg.ws_io_num    = pins::I2sLrc.pin;
-    pins_cfg.data_out_num = pins::I2sDin.pin;
+    pins_cfg.bck_io_num   = I2sBclk.pin;
+    pins_cfg.ws_io_num    = I2sLrc.pin;
+    pins_cfg.data_out_num = I2sDin.pin;
     pins_cfg.data_in_num  = I2S_PIN_NO_CHANGE;
     pins_cfg.mck_io_num   = I2S_PIN_NO_CHANGE;
 

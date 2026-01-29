@@ -1,9 +1,30 @@
 #include "camera.h"
 #include "esp_camera.h"
-
-#include "pins.h"
-
 // Must be cpp because of conflict on sensor_t!
+
+#include "shared/core/PinIO.h"
+
+namespace pins {
+	inline constexpr PinIO<5,  GpioMode::Delegated> CamY2{};
+	inline constexpr PinIO<18, GpioMode::Delegated> CamY3{};
+	inline constexpr PinIO<19, GpioMode::Delegated> CamY4{};
+	inline constexpr PinIO<21, GpioMode::Delegated> CamY5{};
+	inline constexpr PinIO<36, GpioMode::Delegated> CamY6{};
+	inline constexpr PinIO<39, GpioMode::Delegated> CamY7{};
+	inline constexpr PinIO<34, GpioMode::Delegated> CamY8{};
+	inline constexpr PinIO<35, GpioMode::Delegated> CamY9{};
+
+	// ================= Camera sync / clock =================
+	inline constexpr PinIO<10, GpioMode::Delegated> CamXclk{};
+	inline constexpr PinIO<13, GpioMode::Delegated> CamPclk{};
+	inline constexpr PinIO<38, GpioMode::Delegated> CamVsync{};
+	inline constexpr PinIO<9,  GpioMode::Delegated> CamHref{};
+
+	// ================= Camera SCCB (I2C-like) =================
+	inline constexpr PinIO<8,  GpioMode::Delegated> CamSda{};
+	inline constexpr PinIO<7,  GpioMode::Delegated> CamScl{};
+}
+
 
 void camera::begin(Scheduler&)
 {

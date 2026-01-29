@@ -19,11 +19,11 @@ enum class GpioMode : uint8_t
   AnalogIn,
   DigitalOut,
   PWMOut,
-  Reserved
+  Delegated
 };
 
 // ==================== Architecture-dependent scalar types ====================
-struct ArchTypes
+struct GpioArchTypes
 {
   using digital_type = GpioLevel;
 
@@ -62,9 +62,9 @@ struct ArduinoGpioBackend
     return digitalRead(pin) ? GpioLevel::High : GpioLevel::Low;
   }
 
-  static ArchTypes::analog_type read_analog(uint8_t pin)
+  static GpioArchTypes::analog_type read_analog(uint8_t pin)
   {
-    return static_cast<ArchTypes::analog_type>(analogRead(pin));
+    return static_cast<GpioArchTypes::analog_type>(analogRead(pin));
   }
 
   static void write_digital(uint8_t pin, GpioLevel v)
@@ -72,7 +72,7 @@ struct ArduinoGpioBackend
     digitalWrite(pin, (v == GpioLevel::High) ? HIGH : LOW);
   }
 
-  static void write_pwm(uint8_t pin, ArchTypes::pwm_type v)
+  static void write_pwm(uint8_t pin, GpioArchTypes::pwm_type v)
   {
     analogWrite(pin, v);
   }
@@ -85,7 +85,7 @@ template <GpioMode, typename Backend>
 struct GpioModeTraits;
 
 template <typename Backend>
-struct GpioModeTraits<GpioMode::Reserved, Backend>
+struct GpioModeTraits<GpioMode::Delegated, Backend>
 {
   using value_type = void;
   static constexpr bool beginable = false;
@@ -96,7 +96,7 @@ struct GpioModeTraits<GpioMode::Reserved, Backend>
 template <typename Backend>
 struct GpioModeTraits<GpioMode::DigitalIn, Backend>
 {
-  using value_type = ArchTypes::digital_type;
+  using value_type = GpioArchTypes::digital_type;
   static constexpr bool beginable = true;
   static constexpr bool readable  = true;
   static constexpr bool writable  = false;
@@ -108,7 +108,7 @@ struct GpioModeTraits<GpioMode::DigitalIn, Backend>
 template <typename Backend>
 struct GpioModeTraits<GpioMode::DigitalInPullup, Backend>
 {
-  using value_type = ArchTypes::digital_type;
+  using value_type = GpioArchTypes::digital_type;
   static constexpr bool beginable = true;
   static constexpr bool readable  = true;
   static constexpr bool writable  = false;
@@ -120,7 +120,7 @@ struct GpioModeTraits<GpioMode::DigitalInPullup, Backend>
 template <typename Backend>
 struct GpioModeTraits<GpioMode::AnalogIn, Backend>
 {
-  using value_type = ArchTypes::analog_type;
+  using value_type = GpioArchTypes::analog_type;
   static constexpr bool beginable = true;
   static constexpr bool readable  = true;
   static constexpr bool writable  = false;
@@ -132,7 +132,7 @@ struct GpioModeTraits<GpioMode::AnalogIn, Backend>
 template <typename Backend>
 struct GpioModeTraits<GpioMode::DigitalOut, Backend>
 {
-  using value_type = ArchTypes::digital_type;
+  using value_type = GpioArchTypes::digital_type;
   static constexpr bool beginable = true;
   static constexpr bool readable  = false;
   static constexpr bool writable  = true;
@@ -144,7 +144,7 @@ struct GpioModeTraits<GpioMode::DigitalOut, Backend>
 template <typename Backend>
 struct GpioModeTraits<GpioMode::PWMOut, Backend>
 {
-  using value_type = ArchTypes::pwm_type;
+  using value_type = GpioArchTypes::pwm_type;
   static constexpr bool beginable = true;
   static constexpr bool readable  = false;
   static constexpr bool writable  = true;
