@@ -11,6 +11,18 @@
 //  - PWM pins (tilde-marked): D3, D5, D6, D9, D10, D11
 struct UnoR4PinIO
 {
+  // UNO-style numbering: D0..D13, plus A0..A5 (commonly 14..19)
+  static constexpr bool pin_exists(int pin)
+  {
+    return pin >= 0 && pin <= 19;
+  }
+
+  // Reserve nothing by default (hook point for strap/USB/UART/etc if you want later)
+  static constexpr bool pin_is_reserved(int /*pin*/)
+  {
+    return false;
+  }
+
   // A0..A5 exist on UNO R4 cores; typically A0=14..A5=19.
   static constexpr bool pin_supports_analog(int pin)
   {
@@ -27,21 +39,11 @@ struct UnoR4PinIO
     return (pin == 3) || (pin == 5) || (pin == 6) || (pin == 9) || (pin == 10) || (pin == 11);
   }
 
-  // Reserve nothing by default (hook point for strap/USB/UART/etc if you want later)
-  static constexpr bool pin_is_reserved(int /*pin*/) { return false; }
-
-  // UNO-style numbering: D0..D13, plus A0..A5 (commonly 14..19)
-  static constexpr bool isValidPinNumber(int pin)
-  {
-    return pin >= 0 && pin <= 19;
-  }
-
-  // Native backend is always "ready"
   static constexpr bool assertReady() { return true; }
 
+  static void begin_analog_in(uint8_t /*pin*/)     {}
   static void begin_digital_in(uint8_t pin)        { ::pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { ::pinMode(pin, INPUT_PULLUP); }
-  static void begin_analog_in(uint8_t /*pin*/)     {}
   static void begin_digital_out(uint8_t pin)       { ::pinMode(pin, OUTPUT); }
   static void begin_pwm_out(uint8_t pin)           { ::pinMode(pin, OUTPUT); }
 

@@ -7,17 +7,16 @@
 
 struct ArduinoGpioBackend
 {
-  static constexpr bool pin_supports_analog(int /*pin*/) { return true; }
-  static constexpr bool pin_supports_pwm(int /*pin*/)    { return true; }
-  static constexpr bool pin_is_reserved(int /*pin*/)     { return false; }
+  static constexpr bool pin_exists(int pin)      { return pin >= 0; }
+  static constexpr bool pin_is_reserved(int)     { return false; }
+  static constexpr bool pin_supports_analog(int) { return true; }
+  static constexpr bool pin_supports_pwm(int)    { return true; }
 
   static constexpr bool assertReady() { return true; }
 
-  static constexpr bool isValidPinNumber(int pin) { return pin >= 0; }
-
+  static void begin_analog_in(uint8_t)             {}
   static void begin_digital_in(uint8_t pin)        { pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { pinMode(pin, INPUT_PULLUP); }
-  static void begin_analog_in(uint8_t /*pin*/)     {}
   static void begin_digital_out(uint8_t pin)       { pinMode(pin, OUTPUT); }
   static void begin_pwm_out(uint8_t pin)           { pinMode(pin, OUTPUT); }
 

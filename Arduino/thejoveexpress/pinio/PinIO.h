@@ -16,6 +16,7 @@ Optional Compile-time-enforced pin-board policies (i.e. pin 6 not PWM)
 Hardware abstraction layer for testing and business pin compile-time polymorphism
 
 PinIO<15, GpioMode::DigitalIn, Mcp23017PinIO<>> myPin;
+
 myPin has no storage.
 myPin has no virtual methods.
 myPin compiles/optimizes to driver (or native) invocations.
@@ -152,7 +153,7 @@ struct PinIO
   static constexpr bool enabled     = !is_disabled;
 
   static_assert(
-    (MODE == GpioMode::Delegated) || is_disabled || Backend::isValidPinNumber(PIN),
+    (MODE == GpioMode::Delegated) || is_disabled || Backend::pin_exists(PIN),
     "Pin number is not valid for this backend (use PINIO_DISABLED_PIN to disable)"
   );
 

@@ -38,7 +38,7 @@ struct UnitTestPinIO
   static inline bool pwm_capable[NumPins]    = {};
   static inline bool reserved[NumPins]       = {};
 
-  static constexpr bool isValidPinNumber(int pin)
+  static constexpr bool pin_exists(int pin)
   {
     return pin >= 0 && pin < NumPins;
   }
