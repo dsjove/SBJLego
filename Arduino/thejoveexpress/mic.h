@@ -7,7 +7,7 @@
 #pragma GCC diagnostic ignored "-Wcpp"
 #include <driver/i2s.h>
 
-#include "core/PinIO.h"
+#include "pinio/PinIO.h"
 
 namespace mic
 {

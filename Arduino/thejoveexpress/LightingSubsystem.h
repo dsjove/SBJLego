@@ -6,8 +6,8 @@
 
 #include <Adafruit_VEML7700.h>
 
-#include "core/PinIO.h"
-#include "core/I2CHardware.h"
+#include "pinio/PinIO.h"
+#include "pinio/I2CHardware.h"
 
 struct DefaultLightingTraits
 {

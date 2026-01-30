@@ -2,10 +2,10 @@
 #include <TaskScheduler.h>
 
 //Buses
-#include "drivers/Mcp23017PinIO.h"
-#include "drivers/Mcp23017Device.h"
-#include "core/SPIHardware.h"
-#include "core/I2CHardware.h"
+#include "pinio/Mcp23017PinIO.h"
+#include "pinio/Mcp23017Device.h"
+#include "pinio/SPIHardware.h"
+#include "pinio/I2CHardware.h"
 
 // Communications
 #include <NimBLEDevice.h> //Designates BLE impl
@@ -44,11 +44,11 @@ struct MotorPins
 {
   inline static constexpr PinIO<D3, GpioMode::PWMOut> MotorPwma{};
   inline static constexpr PinIO<A1, GpioMode::PWMOut> MotorPwmb{};
-  inline static constexpr PinIO<0, GpioMode::DigitalOut, Mcp23017PinIO> MotorAin1{}; // GPA0
-  inline static constexpr PinIO<1, GpioMode::DigitalOut, Mcp23017PinIO> MotorAin2{}; // GPA1
-  inline static constexpr PinIO<8, GpioMode::DigitalOut, Mcp23017PinIO> MotorBin1{}; // GPB0
-  inline static constexpr PinIO<4, GpioMode::DigitalOut, Mcp23017PinIO> MotorStby{}; // GPA4
-  inline static constexpr PinIO<9, GpioMode::DigitalOut, Mcp23017PinIO> MotorBin2{}; // GPB1
+  inline static constexpr PinIO<0, GpioMode::DigitalOut, Mcp23017PinIO<>> MotorAin1{}; // GPA0
+  inline static constexpr PinIO<1, GpioMode::DigitalOut, Mcp23017PinIO<>> MotorAin2{}; // GPA1
+  inline static constexpr PinIO<8, GpioMode::DigitalOut, Mcp23017PinIO<>> MotorBin1{}; // GPB0
+  inline static constexpr PinIO<4, GpioMode::DigitalOut, Mcp23017PinIO<>> MotorStby{}; // GPA4
+  inline static constexpr PinIO<9, GpioMode::DigitalOut, Mcp23017PinIO<>> MotorBin2{}; // GPB1
 };
 using motor = TB6612Motor<MotorPins>;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/PinIO.h"
+#include "../pinio/PinIO.h"
 
 #include <Adafruit_ST7789.h>
 #include <stdint.h>

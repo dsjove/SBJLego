@@ -4,12 +4,13 @@
 #include <Adafruit_MCP23X17.h>
 
 #include "Mcp23017PinIO.h"
-#include "../core/I2CHardware.h"
+#include "I2CHardware.h"
 
 template<
   bool A0 = false,
   bool A1 = false,
   bool A2 = false,
+  bool readyCheck = false,
   typename WireT = TwoWire,
   WireT& WireRef = Wire
 >
@@ -30,7 +31,7 @@ struct Mcp23017Device
       return false;
     }
 
-    Mcp23017PinIO::attach(device);
+    Mcp23017PinIO<readyCheck>::attach(device);
     return true;
   }
 };

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <SD.h>
 
-#include "../core/SPIHardware.h"
+#include "../pinio/SPIHardware.h"
 
 namespace TheSDCard
 {

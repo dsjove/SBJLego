@@ -6,7 +6,7 @@
 #include <driver/i2s.h>
 #pragma GCC diagnostic pop
 
-#include "core/PinIO.h"
+#include "pinio/PinIO.h"
 
 // Audio output: MAX98357A I2S DAC/amp
 // Target: Seeed XIAO ESP32S3 Sense

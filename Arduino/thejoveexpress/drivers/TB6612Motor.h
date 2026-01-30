@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/PinIO.h"
+#include "../pinio/PinIO.h"
 
 #include <stdint.h>
 #include <limits>

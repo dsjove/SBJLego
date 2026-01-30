@@ -3,8 +3,15 @@
 #include <Arduino.h>
 #include <Adafruit_MCP23X17.h>
 
-#include "../core/PinIO.h"
+#include "PinIO.h"
 
+// ============================================================================
+// Mcp23017PinIO
+// - Template parameter controls runtime readiness checking
+//   * CheckReady = false (default): assertReady() is a no-op (always true)
+//   * CheckReady = true:  assertReady() checks dev != nullptr
+// ============================================================================
+template <bool CheckReady = false>
 struct Mcp23017PinIO
 {
   static constexpr bool pin_supports_analog(int /*pin*/) { return false; }
@@ -20,9 +27,20 @@ struct Mcp23017PinIO
 
   static void attach(Adafruit_MCP23X17& d) { dev = &d; }
 
-  // Soft readiness assertion hook.
-  // Return false to make PinIO operations no-op for this call site.
-  static bool assertReady() { return dev != nullptr; }
+  // --------------------------------------------------------------------------
+  // Soft readiness assertion hook
+  // --------------------------------------------------------------------------
+  static bool assertReady()
+  {
+    if constexpr (!CheckReady)
+    {
+      return true;
+    }
+    else
+    {
+      return dev != nullptr;
+    }
+  }
 
   static void begin_digital_in(uint8_t pin)        { dev->pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { dev->pinMode(pin, INPUT_PULLUP); }

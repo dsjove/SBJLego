@@ -2,7 +2,7 @@
 #include "esp_camera.h"
 // Must be cpp because of conflict on sensor_t!
 
-#include "core/PinIO.h"
+#include "pinio/PinIO.h"
 
 namespace pins {
 	inline constexpr PinIO<5,  GpioMode::Delegated> CamY2{};

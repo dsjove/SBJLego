@@ -6,7 +6,7 @@
 
 #include <Adafruit_LSM6DS3TRC.h>
 
-#include "core/I2CHardware.h"
+#include "pinio/I2CHardware.h"
 
 //LSM6DS3TRC
 namespace motion

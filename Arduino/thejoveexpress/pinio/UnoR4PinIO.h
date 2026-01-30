@@ -4,7 +4,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "../core/PinIO.h"
+#include "PinIO.h"
 
 // PinIO backend for Arduino UNO R4 (Minima / WiFi share the same UNO-style headers).
 // Notes:
