@@ -3,6 +3,25 @@
 #include <Arduino.h>
 #include <type_traits>
 
+#include "GpioTypes.h"
+#include "ArduinoGpioBackend.h"
+
+/*
+Declarative Pin use for code readability and maintainability
+Zero runtime overhead
+Runtime errors are now compile-time errors
+Compile-time-enforced Pin Mode methods (i.e. AnalogIn does not have digital methods)
+Architecture specific concrete types
+Optional Compile-time-enforced pin-board policies (i.e. pin 6 not PWM)
+Hardware abstraction layer for testing and business pin compile-time polymorphism
+
+PinIO<15, GpioMode::DigitalIn, Mcp23017PinIO<>> myPin;
+myPin has no storage.
+myPin has no virtual methods.
+myPin compiles/optimizes to driver (or native) invocations.
+myPin only has valid methods (no write, analog, or PWM methods).
+ */
+
 // ============================================================================
 // PinIO
 // - PIN is int so -1 can represent a disabled pin
@@ -10,94 +29,6 @@
 // - Any other invalid pin is a compile-time error
 // - Backend owns pin validity via isValidPinNumber(int)
 // ============================================================================
-
-// Project-local disabled pin constant.
-// Arduino's NOT_A_PIN exists but its numeric value is inconsistent across cores.
-inline constexpr int PINIO_DISABLED_PIN = -1;
-
-// ==================== Semantic digital level ====================
-enum class GpioLevel : uint8_t
-{
-  Low  = 0,
-  High = 1
-};
-
-// ==================== Pin modes ====================
-enum class GpioMode : uint8_t
-{
-  DigitalIn,
-  DigitalInPullup,
-  AnalogIn,
-  DigitalOut,
-  PWMOut,
-  Delegated
-};
-
-// ==================== Architecture-dependent scalar types ====================
-struct GpioArchTypes
-{
-  using digital_type = GpioLevel;
-
-#if defined(ARDUINO_ARCH_AVR)
-  using analog_type = uint16_t;
-  using pwm_type    = uint8_t;
-#elif defined(ARDUINO_ARCH_RENESAS)
-  using analog_type = uint16_t;
-  using pwm_type    = uint8_t;
-#elif defined(ARDUINO_ARCH_ESP32)
-  using analog_type = uint16_t;
-  using pwm_type    = uint16_t;
-#else
-  using analog_type = uint16_t;
-  using pwm_type    = uint16_t;
-#endif
-};
-
-// -------------------- Native Arduino backend --------------------
-struct ArduinoGpioBackend
-{
-  // Per-pin capabilities / reservations
-  // - Keep these constexpr so PinIO can SFINAE away unsupported APIs.
-  static constexpr bool pin_supports_analog(int /*pin*/) { return true; }
-  static constexpr bool pin_supports_pwm(int /*pin*/)    { return true; }
-  static constexpr bool pin_is_reserved(int /*pin*/)     { return false; }
-
-  // Soft readiness assertion hook (all backends provide this).
-  // Return false to make PinIO operations no-op for this call site.
-  static constexpr bool assertReady() { return true; }
-
-  // Valid if non-negative. -1 is handled by PinIO as "disabled".
-  static constexpr bool isValidPinNumber(int pin)
-  {
-    return pin >= 0;
-  }
-
-  static void begin_digital_in(uint8_t pin)        { pinMode(pin, INPUT); }
-  static void begin_digital_in_pullup(uint8_t pin) { pinMode(pin, INPUT_PULLUP); }
-  static void begin_analog_in(uint8_t /*pin*/)     {}
-  static void begin_digital_out(uint8_t pin)       { pinMode(pin, OUTPUT); }
-  static void begin_pwm_out(uint8_t pin)           { pinMode(pin, OUTPUT); }
-
-  static GpioLevel read_digital(uint8_t pin)
-  {
-    return digitalRead(pin) ? GpioLevel::High : GpioLevel::Low;
-  }
-
-  static GpioArchTypes::analog_type read_analog(uint8_t pin)
-  {
-    return static_cast<GpioArchTypes::analog_type>(analogRead(pin));
-  }
-
-  static void write_digital(uint8_t pin, GpioLevel v)
-  {
-    digitalWrite(pin, (v == GpioLevel::High) ? HIGH : LOW);
-  }
-
-  static void write_pwm(uint8_t pin, GpioArchTypes::pwm_type v)
-  {
-    analogWrite(pin, v);
-  }
-};
 
 // ============================================================================
 // Mode traits
@@ -255,6 +186,14 @@ private:
   }
 
 public:
+  static bool isReady()
+  {
+    if constexpr (!enabled)
+      return true;
+
+    return Backend::assertReady();
+  }
+
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<

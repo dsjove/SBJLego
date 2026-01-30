@@ -1,10 +1,8 @@
-// ============================
-// File: backends/UnoR4PinIO.h
-// ============================
 #pragma once
 
 #include <Arduino.h>
-#include "PinIO.h"
+
+#inlcude "GpioTypes.h"
 
 // PinIO backend for Arduino UNO R4 (Minima / WiFi share the same UNO-style headers).
 // Notes:
