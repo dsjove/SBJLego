@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#inlcude "GpioTypes.h"
+#include "GpioTypes.h"
 
 // PinIO backend for Arduino UNO R4 (Minima / WiFi share the same UNO-style headers).
 // Notes:
@@ -39,13 +39,18 @@ struct UnoR4PinIO
     return (pin == 3) || (pin == 5) || (pin == 6) || (pin == 9) || (pin == 10) || (pin == 11);
   }
 
-  static constexpr bool assertReady() { return true; }
+  static constexpr bool verifyReady() { return true; }
 
   static void begin_analog_in(uint8_t /*pin*/)     {}
   static void begin_digital_in(uint8_t pin)        { ::pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { ::pinMode(pin, INPUT_PULLUP); }
   static void begin_digital_out(uint8_t pin)       { ::pinMode(pin, OUTPUT); }
   static void begin_pwm_out(uint8_t pin)           { ::pinMode(pin, OUTPUT); }
+
+  static constexpr GpioArchTypes::pwm_type pwmMax(uint8_t)
+  {
+    return static_cast<GpioArchTypes::pwm_type>(255);
+  }
 
   static GpioLevel read_digital(uint8_t pin)
   {

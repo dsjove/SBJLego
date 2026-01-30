@@ -4,7 +4,6 @@
 #include <SPI.h>
 #include <assert.h>
 
-// User-overridable macro hook
 #ifndef SPI_BEGIN
   #if defined(ARDUINO_ARCH_AVR)
     #define SPI_BEGIN(sck, miso, mosi) SPI.begin()
@@ -13,76 +12,108 @@
   #endif
 #endif
 
-namespace SPIHardware
+class SPIHardware
 {
-  // Defaults (can be overridden by init)
-  static inline uint8_t sck =
-#if defined(ARDUINO_AVR_MEGA2560)
-      52;
-#elif defined(ARDUINO_ARCH_AVR)
-      13;
-#elif defined(SCK)
-      static_cast<uint8_t>(SCK);
-#else
-      0;
-#endif
+public:
+  using BeginFn = void (*)(int sckPin, int misoPin, int mosiPin);
 
-  static inline uint8_t miso =
-#if defined(ARDUINO_AVR_MEGA2560)
-      50;
-#elif defined(ARDUINO_ARCH_AVR)
-      12;
-#elif defined(MISO)
-      static_cast<uint8_t>(MISO);
-#else
-      0;
-#endif
-
-  static inline uint8_t mosi =
-#if defined(ARDUINO_AVR_MEGA2560)
-      51;
-#elif defined(ARDUINO_ARCH_AVR)
-      11;
-#elif defined(MOSI)
-      static_cast<uint8_t>(MOSI);
-#else
-      0;
-#endif
-
-  using BeginFn = void (*)(uint8_t sckPin, uint8_t misoPin, uint8_t mosiPin);
-  inline void defaultBegin(uint8_t sckPin, uint8_t misoPin, uint8_t mosiPin)
+  static void init(int sckPin, int misoPin, int mosiPin, BeginFn fn = nullptr)
   {
-    SPI_BEGIN(sckPin, misoPin, mosiPin);
-  }
-  static inline BeginFn beginFn = &defaultBegin;
-
-  inline bool valid()
-  {
-    return (sck != miso) && (sck != mosi) && (miso != mosi) && (beginFn != nullptr);
+    auto& s = state();
+    assert(!s.begun && "SPI init() after begin()");
+    s.sck  = sckPin;
+    s.miso = misoPin;
+    s.mosi = mosiPin;
+    if (fn) s.beginFn = fn;
   }
 
-  inline void init(uint8_t sckPin, uint8_t misoPin, uint8_t mosiPin, BeginFn fn = nullptr)
+  static bool valid()
   {
-    sck  = sckPin;
-    miso = misoPin;
-    mosi = mosiPin;
-    if (fn) beginFn = fn;
+    return state().valid();
   }
 
-  inline void begin()
+  static void begin()
   {
-    static bool begun = false;
-    if (begun) return;
+    auto& s = state();
+    if (s.begun) return;
 
-    if (!valid())
+    if (!s.valid())
     {
       Serial.println("[SPI] Invalid config. Call SPIHardware::init(sck,miso,mosi[,beginFn]) in setup().");
       assert(false);
       return;
     }
 
-    beginFn(sck, miso, mosi);
-
-    begun = true;
+    s.beginFn(s.sck, s.miso, s.mosi);
+    s.begun = true;
   }
-}
+
+#ifdef UNIT_TEST
+  static void resetForTests()
+  {
+    state() = State{};
+  }
+#endif
+
+private:
+  static void defaultBegin(int sckPin, int misoPin, int mosiPin)
+  {
+    SPI_BEGIN(sckPin, misoPin, mosiPin);
+  }
+
+  struct State
+  {
+    int sck =
+#if defined(ARDUINO_AVR_MEGA2560)
+        52;
+#elif defined(ARDUINO_ARCH_AVR)
+        13;
+#elif defined(SCK)
+        static_cast<int>(SCK);
+#else
+        -1;
+#endif
+
+    int miso =
+#if defined(ARDUINO_AVR_MEGA2560)
+        50;
+#elif defined(ARDUINO_ARCH_AVR)
+        12;
+#elif defined(MISO)
+        static_cast<int>(MISO);
+#else
+        -1;
+#endif
+
+    int mosi =
+#if defined(ARDUINO_AVR_MEGA2560)
+        51;
+#elif defined(ARDUINO_ARCH_AVR)
+        11;
+#elif defined(MOSI)
+        static_cast<int>(MOSI);
+#else
+        -1;
+#endif
+
+    BeginFn beginFn = &defaultBegin;
+    bool begun = false;
+
+    constexpr bool valid() const
+    {
+      return (sck != miso) &&
+             (sck != mosi) &&
+             (miso != mosi) &&
+             (sck != -1) &&
+             (miso != -1) &&
+             (mosi != -1) &&
+             (beginFn != nullptr);
+    }
+  };
+
+  static State& state()
+  {
+    static State s{};
+    return s;
+  }
+};

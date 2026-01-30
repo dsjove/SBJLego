@@ -183,10 +183,10 @@ public:
   // Readiness query
   static bool isReady()
   {
-    if constexpr (!enabled)
+    if constexpr (is_disabled)
       return true;
 
-    return Backend::assertReady();
+    return Backend::verifyReady();
   }
 
   template <
@@ -194,8 +194,8 @@ public:
     typename std::enable_if_t<GpioModeTraits<M, Backend>::beginable, int> = 0>
   static void begin()
   {
-    if constexpr (!enabled) { return; }
-    if (!Backend::assertReady()) { return; }
+    if constexpr (is_disabled) { return; }
+    if (!Backend::verifyReady()) { return; }
 
     Traits::begin(u8pin());
   }
@@ -206,8 +206,8 @@ public:
                               GpioModeTraits<M, Backend>::writable, int> = 0>
   static void begin(typename GpioModeTraits<M, Backend>::value_type initial)
   {
-    if constexpr (!enabled) { return; }
-    if (!Backend::assertReady()) { return; }
+    if constexpr (is_disabled) { return; }
+    if (!Backend::verifyReady()) { return; }
 
     Traits::begin(u8pin());
     GpioModeTraits<M, Backend>::write(u8pin(), initial);
@@ -218,8 +218,8 @@ public:
     typename std::enable_if_t<GpioModeTraits<M, Backend>::readable, int> = 0>
   static typename GpioModeTraits<M, Backend>::value_type read()
   {
-    if constexpr (!enabled) { return {}; }
-    if (!Backend::assertReady()) { return {}; }
+    if constexpr (is_disabled) { return {}; }
+    if (!Backend::verifyReady()) { return {}; }
 
     return GpioModeTraits<M, Backend>::read(u8pin());
   }
@@ -229,9 +229,51 @@ public:
     typename std::enable_if_t<GpioModeTraits<M, Backend>::writable, int> = 0>
   static void write(typename GpioModeTraits<M, Backend>::value_type v)
   {
-    if constexpr (!enabled) { return; }
-    if (!Backend::assertReady()) { return; }
+    if constexpr (is_disabled) { return; }
+    if (!Backend::verifyReady()) { return; }
 
     GpioModeTraits<M, Backend>::write(u8pin(), v);
+  }
+
+  template <
+     GpioMode M = MODE,
+     typename std::enable_if_t<(M == GpioMode::PWMOut) &&
+                                GpioModeTraits<M, Backend>::writable, int> = 0>
+  static void writeScaled(uint32_t value, uint32_t scaleMax)
+  {
+    using pwm_type = typename GpioModeTraits<M, Backend>::value_type;
+    if (!Backend::verifyReady()) return;
+
+    // Avoid divide-by-zero
+    if (scaleMax == 0) {
+      write(static_cast<pwm_type>(0));
+      return;
+    }
+    const uint32_t maxv = static_cast<uint32_t>(Backend::pwmMax(PIN));
+    // Clamp input
+    if (value >= scaleMax) {
+      write(static_cast<pwm_type>(maxv));
+      return;
+    }
+    // Map [0..scaleMax] -> [0..maxv], rounded
+    const uint32_t mapped = (value * maxv + (scaleMax / 2)) / scaleMax;
+    write(static_cast<pwm_type>(mapped));
+  }
+
+  template <GpioMode M = MODE,
+  typename std::enable_if_t<(M == GpioMode::PWMOut) &&
+                             GpioModeTraits<M, Backend>::writable, int> = 0>
+  static void writeNormalized(float x)
+  {
+    using pwm_type = typename GpioModeTraits<M, Backend>::value_type;
+    if (!Backend::verifyReady()) return;
+    
+    if (x <= 0.0f) { write(static_cast<pwm_type>(0)); return; }
+    if (x >= 1.0f) { write(Backend::pwmMax(PIN)); return; }
+    // Use scaled to avoid duplicating mapping logic.
+    // 65535 gives decent resolution without huge overflow risk in the multiply.
+    constexpr uint32_t SCALE = 65535u;
+    const uint32_t v = static_cast<uint32_t>(x * static_cast<float>(SCALE) + 0.5f);
+    writeScaled(v, SCALE);
   }
 };

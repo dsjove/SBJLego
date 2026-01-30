@@ -59,12 +59,17 @@ struct UnitTestPinIO
   }
 
   // Soft readiness assertion hook.
-  static bool assertReady()
+  static bool verifyReady()
   {
     if constexpr (!CheckReady)
       return true;
     else
       return ready;
+  }
+
+  static constexpr GpioArchTypes::pwm_type pwmMax(uint8_t)
+  {
+    return static_cast<GpioArchTypes::pwm_type>(255);
   }
 
   // --------------------

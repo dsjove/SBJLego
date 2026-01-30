@@ -12,13 +12,18 @@ struct ArduinoGpioBackend
   static constexpr bool pin_supports_analog(int) { return true; }
   static constexpr bool pin_supports_pwm(int)    { return true; }
 
-  static constexpr bool assertReady() { return true; }
+  static constexpr bool verifyReady() { return true; }
 
   static void begin_analog_in(uint8_t)             {}
   static void begin_digital_in(uint8_t pin)        { pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { pinMode(pin, INPUT_PULLUP); }
   static void begin_digital_out(uint8_t pin)       { pinMode(pin, OUTPUT); }
   static void begin_pwm_out(uint8_t pin)           { pinMode(pin, OUTPUT); }
+
+  static constexpr GpioArchTypes::pwm_type pwmMax(uint8_t)
+  {
+	return static_cast<GpioArchTypes::pwm_type>(255);
+  }
 
   static GpioLevel read_digital(uint8_t pin)
   {
