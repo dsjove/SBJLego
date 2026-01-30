@@ -35,19 +35,9 @@ struct DefaultLightingTraits
 };
 
 template <typename Traits = DefaultLightingTraits>
-struct LightingSubsystem
+class LightingSubsystem
 {
-  using SensorType = typename Traits::SensorType;
-
-  static void _tick()
-  {
-    lux = Traits::readLux(sensor);
-  }
-
-  inline static float lux = 0.0f;
-  inline static SensorType sensor{};
-  //inline static Task task(500, TASK_FOREVER, &_tick);
-
+public:
   static void begin(Scheduler& sched)
   {
     Traits::HeadLightPwm.begin(0);
@@ -59,5 +49,17 @@ struct LightingSubsystem
     }
 //    sched.addTask(task);
 //    task.enable();
+  }
+
+private:
+  using SensorType = typename Traits::SensorType;
+  inline static float lux = 0.0f;
+  inline static SensorType sensor{};
+  
+  //inline static Task task(500, TASK_FOREVER, &_tick);
+
+  static void _tick()
+  {
+    lux = Traits::readLux(sensor);
   }
 };
