@@ -24,7 +24,7 @@
 
 // Environment
 #include "motion.h"
-#include "lighting.h"
+#include "LightingSubsystem.h"
 
 // Display
 #include "drivers/ST7789Display.h"
@@ -36,6 +36,7 @@ using expander = Mcp23017Device<>;
 namespace sdcard = TheSDCard;
 TheBLE _ble(_taskScheduler, serviceName);
 TheWifi _wifi(_taskScheduler, serviceName);
+using lighting = LightingSubsystem<>;
 using display = ST7789Display<>;
 namespace audio = MAX98357AAudio;
 
