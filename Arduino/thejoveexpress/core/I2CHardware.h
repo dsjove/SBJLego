@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <assert.h>
 
+// User-overridable macro hook
 #ifndef I2C_BEGIN
   #if defined(ARDUINO_ARCH_AVR)
     #define I2C_BEGIN(sda, scl) Wire.begin()
@@ -14,6 +15,7 @@
 
 namespace I2CHardware
 {
+  // Defaults (can be overridden by init)
   static inline uint8_t sda =
 #if defined(SDA)
       static_cast<uint8_t>(SDA);
@@ -35,16 +37,24 @@ namespace I2CHardware
       400000UL;
 #endif
 
-  inline void init(uint8_t sdaPin, uint8_t sclPin, uint32_t hz)
+  using BeginFn = void (*)(uint8_t sdaPin, uint8_t sclPin);
+  inline void defaultBegin(uint8_t sdaPin, uint8_t sclPin)
+  {
+    I2C_BEGIN(sdaPin, sclPin);
+  }
+  static inline BeginFn beginFn = &defaultBegin;
+
+  inline bool valid()
+  {
+    return (clock != 0) && (sda != scl) && (beginFn != nullptr);
+  }
+
+  inline void init(uint8_t sdaPin, uint8_t sclPin, uint32_t hz, BeginFn fn = nullptr)
   {
     sda = sdaPin;
     scl = sclPin;
     clock = hz;
-  }
-
-  inline bool valid()
-  {
-    return (clock != 0) && (sda != scl);
+    if (fn) beginFn = fn;
   }
 
   inline void begin()
@@ -54,12 +64,12 @@ namespace I2CHardware
 
     if (!valid())
     {
-      Serial.println("[I2C] Invalid config. Call I2CHardware::init(sda,scl,clock) in setup().");
+      Serial.println("[I2C] Invalid config. Call I2CHardware::init(sda,scl,clock[,beginFn]) in setup().");
       assert(false);
       return;
     }
 
-    I2C_BEGIN(sda, scl);
+    beginFn(sda, scl);
     Wire.setClock(clock);
 
     begun = true;

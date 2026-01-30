@@ -2,11 +2,12 @@
 
 #include "../core/PinIO.h"
 
+#include <stdint.h>
+#include <limits>
+
 template <class Traits>
 struct TB6612Motor
 {
-  // ======== Public API types ========
-
   enum class Channel : uint8_t { A, B };
 
   enum class StopMode : uint8_t
@@ -19,13 +20,6 @@ struct TB6612Motor
   {
     Forward,
     Reverse
-  };
-
-  struct Command
-  {
-    uint8_t   speed = 0; // 0..255
-    Direction dir   = Direction::Forward;
-    StopMode  stop  = StopMode::Coast;
   };
 
   // ======== Begin / enable ========
@@ -61,52 +55,42 @@ struct TB6612Motor
     setStby(true);
   }
 
-  // ======== Commands ========
+  // ======== Single minimal command ========
 
-  inline static void stop(Channel ch, StopMode mode = StopMode::Coast)
+  // Rules:
+  // - value == 0        => Brake
+  // - value >  0        => Forward, PWM = clamp(value, 0..255)
+  // - value <  0        => Reverse, PWM = clamp(abs(value), 0..255)
+  // - value == -256     => Coast
+  inline static void set(Channel ch, int16_t value)
   {
-    applyStop(ch, mode);
-  }
+    constexpr int16_t kCoastSentinel = -256;
 
-  inline static void set(Channel ch, const Command& cmd)
-  {
-    if (cmd.speed == 0)
+    if (value == 0)
     {
-      applyStop(ch, cmd.stop);
+      applyStop(ch, StopMode::Brake);
+      return;
+    }
+
+    if (value == kCoastSentinel)
+    {
+      applyStop(ch, StopMode::Coast);
       return;
     }
 
     // Optional “auto-wake”: bring chip out of standby to execute the command.
     setStby(true);
 
-    applyRun(ch, cmd.dir, cmd.speed);
-  }
-
-  // Signed speed: -255..255
-  inline static void set(Channel ch, int speedSigned, StopMode stopWhenZero = StopMode::Coast)
-  {
-    if (speedSigned == 0)
+    if (value > 0)
     {
-      applyStop(ch, stopWhenZero);
-      return;
+      applyRun(ch, Direction::Forward, clampU8(static_cast<int32_t>(value)));
     }
-
-    Command c;
-    c.dir   = (speedSigned > 0) ? Direction::Forward : Direction::Reverse;
-    c.speed = clampU8(speedSigned > 0 ? speedSigned : -speedSigned);
-    c.stop  = stopWhenZero;
-
-    set(ch, c);
-  }
-
-  inline static void setA(int speedSigned, StopMode stopWhenZero = StopMode::Coast)
-  {
-    set(Channel::A, speedSigned, stopWhenZero);
-  }
-
-  inline static void setB(int speedSigned, StopMode stopWhenZero = StopMode::Coast)
-  {
-    set(Channel::B, speedSigned, stopWhenZero);
+    else
+    {
+      // Avoid abs() overflow at -32768 by promoting first
+      const int32_t mag = -(static_cast<int32_t>(value));
+      applyRun(ch, Direction::Reverse, clampU8(mag));
+    }
   }
 
   inline static void emergencyStop(bool goStandby = true)
@@ -116,46 +100,10 @@ struct TB6612Motor
     if (goStandby) setStby(false);
   }
 
-  // ======== Optional ramp helper (still stateless externally) ========
-  // You hold the state (current/target) outside, we just provide a step function.
-
-  struct RampState
-  {
-    int current = 0; // -255..255
-    int target  = 0; // -255..255
-  };
-
-  inline static void rampTick(Channel ch, RampState& s, uint8_t step = 5, StopMode stopWhenZero = StopMode::Coast)
-  {
-    // Clamp target defensively
-    if (s.target < -255) s.target = -255;
-    if (s.target >  255) s.target =  255;
-
-    if (s.current == s.target)
-    {
-      // Re-apply final state (safe if other code toggled standby/pins)
-      set(ch, s.current, stopWhenZero);
-      return;
-    }
-
-    if (s.target > s.current)
-    {
-      int next = s.current + step;
-      s.current = (next > s.target) ? s.target : next;
-    }
-    else
-    {
-      int next = s.current - step;
-      s.current = (next < s.target) ? s.target : next;
-    }
-
-    set(ch, s.current, stopWhenZero);
-  }
-
 private:
   // ======== Helpers ========
 
-  inline static uint8_t clampU8(int v)
+  inline static uint8_t clampU8(int32_t v)
   {
     if (v < 0)   return 0;
     if (v > 255) return 255;

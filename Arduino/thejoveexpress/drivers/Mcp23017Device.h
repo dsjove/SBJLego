@@ -20,6 +20,8 @@ struct Mcp23017Device
 
   static inline Adafruit_MCP23X17 device{};
 
+  //using ExpanderLed = PinIO<5,  GpioMode::DigitalOut, Mcp23017PinIO>;
+
   static inline bool begin()
   {
     I2CHardware::begin();

@@ -3,6 +3,18 @@
 #include <Arduino.h>
 #include <type_traits>
 
+// ============================================================================
+// PinIO
+// - PIN is int so -1 can represent a disabled pin
+// - Disabled is valid and results in no-ops
+// - Any other invalid pin is a compile-time error
+// - Backend owns pin validity via isValidPinNumber(int)
+// ============================================================================
+
+// Project-local disabled pin constant.
+// Arduino's NOT_A_PIN exists but its numeric value is inconsistent across cores.
+inline constexpr int PINIO_DISABLED_PIN = -1;
+
 // ==================== Semantic digital level ====================
 enum class GpioLevel : uint8_t
 {
@@ -47,12 +59,18 @@ struct ArduinoGpioBackend
   static constexpr bool supports_analog = true;
   static constexpr bool supports_pwm    = true;
 
-  // Optional hook (PinIO will call if present)
+  // Optional hook
   static constexpr bool ready() { return true; }
+
+  // Valid if non-negative. -1 is handled by PinIO as "disabled".
+  static constexpr bool isValidPinNumber(int pin)
+  {
+    return pin >= 0;
+  }
 
   static void begin_digital_in(uint8_t pin)        { pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { pinMode(pin, INPUT_PULLUP); }
-  static void begin_analog_in(uint8_t /*pin*/)     { /* no-op */ }
+  static void begin_analog_in(uint8_t /*pin*/)     {}
   static void begin_digital_out(uint8_t pin)       { pinMode(pin, OUTPUT); }
   static void begin_pwm_out(uint8_t pin)           { pinMode(pin, OUTPUT); }
 
@@ -167,24 +185,31 @@ namespace pinio_detail
   static constexpr bool backend_ready()
   {
     if constexpr (has_ready<B>::value)
-    {
       return static_cast<bool>(B::ready());
-    }
     else
-    {
       return true;
-    }
   }
 }
 
 // ============================================================================
 // PinIO
 // ============================================================================
-template <uint8_t PIN, GpioMode MODE, typename Backend = ArduinoGpioBackend>
+template <int PIN, GpioMode MODE, typename Backend = ArduinoGpioBackend>
 struct PinIO
 {
-  static constexpr uint8_t pin   = PIN;
+  static constexpr int pin   = PIN;
   static constexpr GpioMode mode = MODE;
+
+  static constexpr bool is_disabled = (PIN == PINIO_DISABLED_PIN);
+  static constexpr bool enabled     = !is_disabled;
+
+  // Hard rule:
+  //  - disabled (-1) is always allowed
+  //  - otherwise the backend must accept the pin
+  static_assert(
+    is_disabled || Backend::isValidPinNumber(PIN),
+    "Pin number is not valid for this backend (use PINIO_DISABLED_PIN to disable)"
+  );
 
   using Traits     = GpioModeTraits<MODE, Backend>;
   using value_type = typename Traits::value_type;
@@ -193,23 +218,40 @@ private:
   static constexpr bool wants_analog = (MODE == GpioMode::AnalogIn);
   static constexpr bool wants_pwm    = (MODE == GpioMode::PWMOut);
 
+  // IMPORTANT:
+  // This must be well-formed even when PIN is disabled, because some toolchains
+  // will still instantiate enough of the function body to diagnose errors.
+  static constexpr uint8_t u8pin()
+  {
+    if constexpr (is_disabled)
+    {
+      // Not used (all public ops early-return when disabled), but must compile.
+      return 0;
+    }
+    else
+    {
+      static_assert(PIN >= 0 && PIN <= 255, "Pin number out of uint8_t range");
+      return static_cast<uint8_t>(PIN);
+    }
+  }
+
 public:
   template <
     GpioMode M = MODE,
     typename std::enable_if_t<GpioModeTraits<M, Backend>::beginable, int> = 0>
   static void begin()
   {
+    if constexpr (!enabled) { return; }
+
     if (!pinio_detail::backend_ready<Backend>())
-    {
       return;
-    }
 
     static_assert(!(wants_analog && !Backend::supports_analog),
                   "Selected backend does not support AnalogIn");
     static_assert(!(wants_pwm && !Backend::supports_pwm),
                   "Selected backend does not support PWMOut");
 
-    Traits::begin(PIN);
+    Traits::begin(u8pin());
   }
 
   template <
@@ -220,18 +262,18 @@ public:
       int> = 0>
   static void begin(typename GpioModeTraits<M, Backend>::value_type initial)
   {
+    if constexpr (!enabled) { return; }
+
     if (!pinio_detail::backend_ready<Backend>())
-    {
       return;
-    }
 
     static_assert(!(wants_analog && !Backend::supports_analog),
                   "Selected backend does not support AnalogIn");
     static_assert(!(wants_pwm && !Backend::supports_pwm),
                   "Selected backend does not support PWMOut");
 
-    Traits::begin(PIN);
-    GpioModeTraits<M, Backend>::write(PIN, initial);
+    Traits::begin(u8pin());
+    GpioModeTraits<M, Backend>::write(u8pin(), initial);
   }
 
   template <
@@ -239,17 +281,16 @@ public:
     typename std::enable_if_t<GpioModeTraits<M, Backend>::readable, int> = 0>
   static typename GpioModeTraits<M, Backend>::value_type read()
   {
+    if constexpr (!enabled) { return {}; }
+
     if (!pinio_detail::backend_ready<Backend>())
-    {
-      // For “not ready”, return a sensible zero value for the mode.
-      // You can also choose to assert/abort in debug builds.
       return {};
-    }
 
     static constexpr bool wants_analog_m = (M == GpioMode::AnalogIn);
     static_assert(!(wants_analog_m && !Backend::supports_analog),
                   "Selected backend does not support AnalogIn");
-    return GpioModeTraits<M, Backend>::read(PIN);
+
+    return GpioModeTraits<M, Backend>::read(u8pin());
   }
 
   template <
@@ -257,14 +298,15 @@ public:
     typename std::enable_if_t<GpioModeTraits<M, Backend>::writable, int> = 0>
   static void write(typename GpioModeTraits<M, Backend>::value_type v)
   {
+    if constexpr (!enabled) { return; }
+
     if (!pinio_detail::backend_ready<Backend>())
-    {
       return;
-    }
 
     static constexpr bool wants_pwm_m = (M == GpioMode::PWMOut);
     static_assert(!(wants_pwm_m && !Backend::supports_pwm),
                   "Selected backend does not support PWMOut");
-    GpioModeTraits<M, Backend>::write(PIN, v);
+
+    GpioModeTraits<M, Backend>::write(u8pin(), v);
   }
 };

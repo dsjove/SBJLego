@@ -27,7 +27,7 @@
 #include "lighting.h"
 
 // Display
-#include "display.h"
+#include "drivers/ST7789Display.h"
 #include "MAX98357AAudio.h"
 
 const std::string serviceName = "The Jove Express";
@@ -36,6 +36,7 @@ using expander = Mcp23017Device<>;
 namespace sdcard = TheSDCard;
 TheBLE _ble(_taskScheduler, serviceName);
 TheWifi _wifi(_taskScheduler, serviceName);
+using display = ST7789Display<>;
 namespace audio = MAX98357AAudio;
 
 struct MotorPins
@@ -69,9 +70,11 @@ void setup()
 // Motor
   motor::begin();
   docking::begin(_taskScheduler);
+
 // Environment
   motion::begin(_taskScheduler);
   lighting::begin(_taskScheduler);
+
 // Display
   display::begin();
   audio::begin();

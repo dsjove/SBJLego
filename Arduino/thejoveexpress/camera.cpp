@@ -25,7 +25,6 @@ namespace pins {
 	inline constexpr PinIO<7,  GpioMode::Delegated> CamScl{};
 }
 
-
 void camera::begin(Scheduler&)
 {
   // Camera pin mapping per Seeed XIAO ESP32S3 Sense docs :contentReference[oaicite:4]{index=4}

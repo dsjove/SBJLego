@@ -2,12 +2,18 @@
 
 #include <Arduino.h>
 #include <Adafruit_MCP23X17.h>
+
 #include "../core/PinIO.h"
 
 struct Mcp23017PinIO
 {
   static constexpr bool supports_analog = false;
   static constexpr bool supports_pwm    = false;
+
+  static constexpr bool isValidPinNumber(int pin)
+  {
+    return pin >= 0 && pin <= 15;
+  }
 
   static inline Adafruit_MCP23X17* dev = nullptr;
 
@@ -26,7 +32,10 @@ struct Mcp23017PinIO
     return dev->digitalRead(pin) ? GpioLevel::High : GpioLevel::Low;
   }
 
-  static GpioArchTypes::analog_type read_analog(uint8_t /*pin*/) { return 0; }
+  static GpioArchTypes::analog_type read_analog(uint8_t /*pin*/)
+  {
+    return 0;
+  }
 
   static void write_digital(uint8_t pin, GpioLevel v)
   {
