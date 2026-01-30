@@ -7,8 +7,9 @@
 
 struct Mcp23017PinIO
 {
-  static constexpr bool supports_analog = false;
-  static constexpr bool supports_pwm    = false;
+  static constexpr bool pin_supports_analog(int /*pin*/) { return false; }
+  static constexpr bool pin_supports_pwm(int /*pin*/)    { return false; }
+  static constexpr bool pin_is_reserved(int /*pin*/)     { return false; }
 
   static constexpr bool isValidPinNumber(int pin)
   {
@@ -19,7 +20,9 @@ struct Mcp23017PinIO
 
   static void attach(Adafruit_MCP23X17& d) { dev = &d; }
 
-  static bool ready() { return dev != nullptr; }
+  // Soft readiness assertion hook.
+  // Return false to make PinIO operations no-op for this call site.
+  static bool assertReady() { return dev != nullptr; }
 
   static void begin_digital_in(uint8_t pin)        { dev->pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { dev->pinMode(pin, INPUT_PULLUP); }
