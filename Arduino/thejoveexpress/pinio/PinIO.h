@@ -23,14 +23,6 @@ myPin only has valid methods (no write, analog, or PWM methods).
  */
 
 // ============================================================================
-// PinIO
-// - PIN is int so -1 can represent a disabled pin
-// - Disabled is valid and results in no-ops
-// - Any other invalid pin is a compile-time error
-// - Backend owns pin validity via isValidPinNumber(int)
-// ============================================================================
-
-// ============================================================================
 // Mode traits
 // ============================================================================
 template <GpioMode, typename Backend>
@@ -39,7 +31,7 @@ struct GpioModeTraits;
 template <typename Backend>
 struct GpioModeTraits<GpioMode::Delegated, Backend>
 {
-  using value_type = void;
+  using value_type = GpioArchTypes::empty_type;
   static constexpr bool beginable = false;
   static constexpr bool readable  = false;
   static constexpr bool writable  = false;
@@ -106,36 +98,44 @@ struct GpioModeTraits<GpioMode::PWMOut, Backend>
 };
 
 // ============================================================================
-// Backend pin capability helpers
+// Pin legality checks (type-level)
 // ============================================================================
 namespace pinio_detail
 {
-  template <typename Backend, int Pin>
-  static constexpr bool pin_allowed()
+  template <typename Backend, int Pin, GpioMode Mode>
+  static consteval bool pin_mode_allowed()
   {
-    // Disabled pins are always allowed and compile (operations become no-ops).
-    if constexpr (Pin == PINIO_DISABLED_PIN)
+    // Delegated means "PinIO is not responsible for validating this pin/mode".
+    if constexpr (Mode == GpioMode::Delegated)
+    {
       return true;
-    else
-      return !Backend::pin_is_reserved(Pin);
-  }
+    }
 
-  template <typename Backend, int Pin>
-  static constexpr bool pin_supports_analog()
-  {
+    // Disabled pins are always allowed for any non-delegated mode (becomes no-op).
     if constexpr (Pin == PINIO_DISABLED_PIN)
+    {
       return true;
-    else
+    }
+
+    // Hard disallow reserved pins for non-delegated use.
+    if constexpr (Backend::pin_is_reserved(Pin))
+    {
+      return false;
+    }
+
+    // Mode-specific capabilities.
+    if constexpr (Mode == GpioMode::AnalogIn)
+    {
       return Backend::pin_supports_analog(Pin);
-  }
+    }
 
-  template <typename Backend, int Pin>
-  static constexpr bool pin_supports_pwm()
-  {
-    if constexpr (Pin == PINIO_DISABLED_PIN)
-      return true;
-    else
+    if constexpr (Mode == GpioMode::PWMOut)
+    {
       return Backend::pin_supports_pwm(Pin);
+    }
+
+    // DigitalIn / DigitalInPullup / DigitalOut: OK if pin is otherwise valid.
+    return true;
   }
 }
 
@@ -145,38 +145,31 @@ namespace pinio_detail
 template <int PIN, GpioMode MODE, typename Backend = ArduinoGpioBackend>
 struct PinIO
 {
-  static constexpr int pin   = PIN;
+  static constexpr int pin = PIN;
   static constexpr GpioMode mode = MODE;
 
   static constexpr bool is_disabled = (PIN == PINIO_DISABLED_PIN);
   static constexpr bool enabled     = !is_disabled;
 
-  // Hard rule:
-  //  - disabled (-1) is always allowed
-  //  - otherwise the backend must accept the pin
   static_assert(
-    is_disabled || Backend::isValidPinNumber(PIN),
+    (MODE == GpioMode::Delegated) || is_disabled || Backend::isValidPinNumber(PIN),
     "Pin number is not valid for this backend (use PINIO_DISABLED_PIN to disable)"
   );
 
   static_assert(
-    pinio_detail::pin_allowed<Backend, PIN>(),
-    "Pin is reserved for this backend"
+    pinio_detail::pin_mode_allowed<Backend, PIN, MODE>(),
+    "Pin has illegal mode for this backend"
   );
 
   using Traits     = GpioModeTraits<MODE, Backend>;
   using value_type = typename Traits::value_type;
 
 private:
-  // IMPORTANT:
-  // This must be well-formed even when PIN is disabled, because some toolchains
-  // will still instantiate enough of the function body to diagnose errors.
   static constexpr uint8_t u8pin()
   {
     if constexpr (is_disabled)
     {
-      // Not used (all public ops early-return when disabled), but must compile.
-      return 0;
+      return 0; // Never executed but requred for compilation.
     }
     else
     {
@@ -186,6 +179,7 @@ private:
   }
 
 public:
+  // Readiness query
   static bool isReady()
   {
     if constexpr (!enabled)
@@ -196,35 +190,23 @@ public:
 
   template <
     GpioMode M = MODE,
-    typename std::enable_if_t<
-      GpioModeTraits<M, Backend>::beginable &&
-      (M != GpioMode::AnalogIn || pinio_detail::pin_supports_analog<Backend, PIN>()) &&
-      (M != GpioMode::PWMOut   || pinio_detail::pin_supports_pwm<Backend, PIN>()),
-      int> = 0>
+    typename std::enable_if_t<GpioModeTraits<M, Backend>::beginable, int> = 0>
   static void begin()
   {
     if constexpr (!enabled) { return; }
-
-    if (!Backend::assertReady())
-      return;
+    if (!Backend::assertReady()) { return; }
 
     Traits::begin(u8pin());
   }
 
   template <
     GpioMode M = MODE,
-    typename std::enable_if_t<
-      GpioModeTraits<M, Backend>::beginable &&
-      GpioModeTraits<M, Backend>::writable &&
-      (M != GpioMode::AnalogIn || pinio_detail::pin_supports_analog<Backend, PIN>()) &&
-      (M != GpioMode::PWMOut   || pinio_detail::pin_supports_pwm<Backend, PIN>()),
-      int> = 0>
+    typename std::enable_if_t<GpioModeTraits<M, Backend>::beginable &&
+                              GpioModeTraits<M, Backend>::writable, int> = 0>
   static void begin(typename GpioModeTraits<M, Backend>::value_type initial)
   {
     if constexpr (!enabled) { return; }
-
-    if (!Backend::assertReady())
-      return;
+    if (!Backend::assertReady()) { return; }
 
     Traits::begin(u8pin());
     GpioModeTraits<M, Backend>::write(u8pin(), initial);
@@ -232,32 +214,22 @@ public:
 
   template <
     GpioMode M = MODE,
-    typename std::enable_if_t<
-      GpioModeTraits<M, Backend>::readable &&
-      (M != GpioMode::AnalogIn || pinio_detail::pin_supports_analog<Backend, PIN>()),
-      int> = 0>
+    typename std::enable_if_t<GpioModeTraits<M, Backend>::readable, int> = 0>
   static typename GpioModeTraits<M, Backend>::value_type read()
   {
     if constexpr (!enabled) { return {}; }
-
-    if (!Backend::assertReady())
-      return {};
+    if (!Backend::assertReady()) { return {}; }
 
     return GpioModeTraits<M, Backend>::read(u8pin());
   }
 
   template <
     GpioMode M = MODE,
-    typename std::enable_if_t<
-      GpioModeTraits<M, Backend>::writable &&
-      (M != GpioMode::PWMOut || pinio_detail::pin_supports_pwm<Backend, PIN>()),
-      int> = 0>
+    typename std::enable_if_t<GpioModeTraits<M, Backend>::writable, int> = 0>
   static void write(typename GpioModeTraits<M, Backend>::value_type v)
   {
     if constexpr (!enabled) { return; }
-
-    if (!Backend::assertReady())
-      return;
+    if (!Backend::assertReady()) { return; }
 
     GpioModeTraits<M, Backend>::write(u8pin(), v);
   }

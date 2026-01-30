@@ -27,6 +27,8 @@ struct GpioArchTypes
 {
   using digital_type = GpioLevel;
 
+  struct empty_type {};
+
 #if defined(ARDUINO_ARCH_AVR)
   using analog_type = uint16_t;
   using pwm_type    = uint8_t;

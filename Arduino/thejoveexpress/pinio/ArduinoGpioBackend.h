@@ -7,21 +7,13 @@
 
 struct ArduinoGpioBackend
 {
-  // Per-pin capabilities / reservations
-  // - Keep these constexpr so PinIO can SFINAE away unsupported APIs.
   static constexpr bool pin_supports_analog(int /*pin*/) { return true; }
   static constexpr bool pin_supports_pwm(int /*pin*/)    { return true; }
   static constexpr bool pin_is_reserved(int /*pin*/)     { return false; }
 
-  // Soft readiness assertion hook (all backends provide this).
-  // Return false to make PinIO operations no-op for this call site.
   static constexpr bool assertReady() { return true; }
 
-  // Valid if non-negative. -1 is handled by PinIO as "disabled".
-  static constexpr bool isValidPinNumber(int pin)
-  {
-    return pin >= 0;
-  }
+  static constexpr bool isValidPinNumber(int pin) { return pin >= 0; }
 
   static void begin_digital_in(uint8_t pin)        { pinMode(pin, INPUT); }
   static void begin_digital_in_pullup(uint8_t pin) { pinMode(pin, INPUT_PULLUP); }
