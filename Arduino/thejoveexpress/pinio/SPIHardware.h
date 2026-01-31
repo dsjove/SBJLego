@@ -18,6 +18,7 @@ public:
   using BeginFn = void (*)(int sckPin, int misoPin, int mosiPin);
 
   // Call init if defaults do not work.
+  // Default values come from platform macros and Arch knowledge.
   static void init(int sckPin, int misoPin, int mosiPin, BeginFn fn = nullptr)
   {
     auto& s = state();
@@ -33,6 +34,7 @@ public:
     return state().valid();
   }
 
+  // Safe to call multiple times.
   static void begin()
   {
     auto& s = state();

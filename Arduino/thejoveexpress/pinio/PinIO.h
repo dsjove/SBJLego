@@ -176,7 +176,6 @@ private:
   }
 
 public:
-  // Readiness query
   static bool isReady()
   {
     if constexpr (is_disabled)
