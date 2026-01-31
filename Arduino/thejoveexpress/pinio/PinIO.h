@@ -4,24 +4,20 @@
 #include <type_traits>
 
 #include "GpioTypes.h"
-#include "ArduinoGpioBackend.h"
 
-/*
-Declarative Pin use for code readability and maintainability
-Zero runtime overhead
-Runtime errors are now compile-time errors
-Compile-time-enforced Pin Mode methods (i.e. AnalogIn does not have digital methods)
-Architecture specific concrete types
-Optional Compile-time-enforced pin-board policies (i.e. pin 6 not PWM)
-Hardware abstraction layer for testing and business pin compile-time polymorphism
-
-PinIO<15, GpioMode::DigitalIn, Mcp23017PinIO<>> myPin;
-
-myPin has no storage.
-myPin has no virtual methods.
-myPin compiles/optimizes to driver (or native) invocations.
-myPin only has valid methods (no write, analog, or PWM methods).
- */
+#if defined(ARDUINO)
+// Arduino build
+  #include <Arduino.h>
+  #include "ArduinoGpioBackend.h"
+  using DefaultPinIOBackend = ArduinoGpioBackend;
+#elif defined(__linux__)
+// Linux build (Raspberry Pi)
+  #include <cstdint>
+  #include "RaspberryPiGpioBackend.h"
+  using DefaultPinIOBackend = RaspberryPiGpioBackend;
+#else
+  #error "PinIO: Unsupported platform. Expected ARDUINO or __linux__."
+#endif
 
 // ============================================================================
 // Mode traits
@@ -143,7 +139,7 @@ namespace pinio_detail
 // ============================================================================
 // PinIO
 // ============================================================================
-template <int PIN, GpioMode MODE, typename Backend = ArduinoGpioBackend>
+template <int PIN, GpioMode MODE, typename Backend = DefaultPinIOBackend>
 struct PinIO
 {
   static constexpr int pin = PIN;

@@ -17,6 +17,7 @@ class SPIHardware
 public:
   using BeginFn = void (*)(int sckPin, int misoPin, int mosiPin);
 
+  // Call init if defaults do not work.
   static void init(int sckPin, int misoPin, int mosiPin, BeginFn fn = nullptr)
   {
     auto& s = state();

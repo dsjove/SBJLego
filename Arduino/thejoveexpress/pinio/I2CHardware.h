@@ -17,6 +17,7 @@ class I2CHardware
 public:
   using BeginFn = void (*)(int sdaPin, int sclPin);
 
+  // Call init if defaults do not work.
   static void init(int sdaPin, int sclPin, uint32_t hz, BeginFn fn = nullptr)
   {
     auto& s = state();

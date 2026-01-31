@@ -11,32 +11,20 @@
 // - Stores per-pin mode and values in static arrays
 // - Tracks calls (begins/reads/writes) for assertions
 // - Lets tests configure per-pin capabilities + reservations
-// - Ready behavior can be enabled/disabled at compile time
 //
 // Usage:
-//   using UT = UnitTestPinIO<32, true>; // 32 pins, runtime ready check enabled
+//   using UT = UnitTestPinIO<32>;
 //   UT::reset();
-//   UT::setReady(true);
 //   using Led = PinIO<5, GpioMode::DigitalOut, UT>;
 //   Led::begin(GpioLevel::Low);
 //   Led::write(GpioLevel::High);
 //   EXPECT_EQ(UT::digital[5], GpioLevel::High);
 //   EXPECT_EQ(UT::write_digital_calls[5], 1);
 // ============================================================================
-template <int NumPins = 32, bool CheckReady = false>
+template <int NumPins = 32>
 struct UnitTestPinIO
 {
   static_assert(NumPins > 0 && NumPins <= 256, "NumPins must be 1..256");
-
-  // --------------------
-  // Capabilities / policy
-  // --------------------
-  static inline bool ready = true;
-
-  // default: all pins support digital. Analog/PWM default off to force tests to opt-in.
-  static inline bool analog_capable[NumPins] = {};
-  static inline bool pwm_capable[NumPins]    = {};
-  static inline bool reserved[NumPins]       = {};
 
   static constexpr bool pin_exists(int pin)
   {
@@ -45,26 +33,22 @@ struct UnitTestPinIO
 
   static constexpr bool pin_supports_analog(int pin)
   {
-    return (pin >= 0 && pin < NumPins) ? analog_capable[pin] : false;
+    return true;
   }
 
   static constexpr bool pin_supports_pwm(int pin)
   {
-    return (pin >= 0 && pin < NumPins) ? pwm_capable[pin] : false;
+    return true;
   }
 
   static constexpr bool pin_is_reserved(int pin)
   {
-    return (pin >= 0 && pin < NumPins) ? reserved[pin] : true;
+    return false;
   }
 
-  // Soft readiness assertion hook.
   static bool verifyReady()
   {
-    if constexpr (!CheckReady)
       return true;
-    else
-      return ready;
   }
 
   static constexpr GpioArchTypes::pwm_type pwmMax(uint8_t)
@@ -101,14 +85,8 @@ struct UnitTestPinIO
   // --------------------
   static void reset()
   {
-    ready = true;
-
     for (int i = 0; i < NumPins; ++i)
     {
-      analog_capable[i] = false;
-      pwm_capable[i]    = false;
-      reserved[i]       = false;
-
       mode[i] = GpioMode::Delegated;
 
       digital[i] = GpioLevel::Low;
@@ -127,23 +105,6 @@ struct UnitTestPinIO
       write_digital_calls[i] = 0;
       write_pwm_calls[i] = 0;
     }
-  }
-
-  static void setReady(bool r) { ready = r; }
-
-  static void setAnalogCapable(int pin, bool v)
-  {
-    if (pin >= 0 && pin < NumPins) analog_capable[pin] = v;
-  }
-
-  static void setPwmCapable(int pin, bool v)
-  {
-    if (pin >= 0 && pin < NumPins) pwm_capable[pin] = v;
-  }
-
-  static void setReserved(int pin, bool v)
-  {
-    if (pin >= 0 && pin < NumPins) reserved[pin] = v;
   }
 
   // Optionally seed read values
@@ -219,8 +180,6 @@ void sample() {
 	using UT = UnitTestPinIO<32, true>;
 
 	UT::reset();
-	UT::setReady(true);
-	UT::setPwmCapable(6, true);
 
 	using Led = PinIO<5, GpioMode::DigitalOut, UT>;
 	using Fan = PinIO<6, GpioMode::PWMOut, UT>;
