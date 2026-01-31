@@ -2,31 +2,48 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <assert.h>
+#include <cstdint>
 
 #ifndef I2C_BEGIN
   #if defined(ARDUINO_ARCH_AVR)
     #define I2C_BEGIN(sda, scl) Wire.begin()
   #else
-    #define I2C_BEGIN(sda, scl) Wire.begin((sda), (scl))
+    #define I2C_BEGIN(sda, scl) Wire.begin(sda, scl)
   #endif
+#endif
+
+#ifndef I2C_ON_ERROR
+  // Optional compile-time error hook.
+  // Example:
+  //   #define I2C_ON_ERROR(msg) do { /* log */ } while (0)
+  #define I2C_ON_ERROR(msg) ((void)0)
 #endif
 
 class I2CHardware
 {
 public:
   using BeginFn = void (*)(int sdaPin, int sclPin);
+  using ErrorFn = void (*)(const char* message);
 
-  // Call init if defaults do not work.
-  // Default values come from platform macros and Arch knowledge.
+  // Configure before begin().
   static void init(int sdaPin, int sclPin, uint32_t hz, BeginFn fn = nullptr)
   {
     auto& s = state();
-    assert(!s.begun && "I2C init() after begin()");
+
+    if (s.begun)
+    {
+      reportError("[I2C] init() after begin()");
+      return;
+    }
+
     s.sda   = sdaPin;
     s.scl   = sclPin;
     s.clock = hz;
-    if (fn) s.beginFn = fn;
+
+    if (fn)
+    {
+      s.beginFn = fn;
+    }
   }
 
   static bool valid()
@@ -34,23 +51,36 @@ public:
     return state().valid();
   }
 
+  // Optional runtime error handler.
+  static void onError(ErrorFn fn)
+  {
+    state().errorFn = fn;
+  }
+
   // Safe to call multiple times.
-  static void begin()
+  // Returns true on success.
+  static bool begin()
   {
     auto& s = state();
-    if (s.begun) return;
 
-    if (!s.valid())
+    if (s.begun)
     {
-      Serial.println("[I2C] Invalid config. Call I2CHardware::init(sda,scl,clock[,beginFn]) in setup().");
-      assert(false);
-      return;
+      return true;
+    }
+
+    if (s.valid() == false)
+    {
+      reportError(
+        "[I2C] Invalid config. Call I2CHardware::init(sda, scl, clock[, beginFn]) in setup()."
+      );
+      return false;
     }
 
     s.beginFn(s.sda, s.scl);
     Wire.setClock(s.clock);
 
     s.begun = true;
+    return true;
   }
 
 #ifdef UNIT_TEST
@@ -61,6 +91,20 @@ public:
 #endif
 
 private:
+  static void reportError(const char* msg)
+  {
+    auto& s = state();
+
+    if (s.errorFn)
+    {
+      s.errorFn(msg);
+    }
+    else
+    {
+      I2C_ON_ERROR(msg);
+    }
+  }
+
   static void defaultBegin(int sdaPin, int sclPin)
   {
     I2C_BEGIN(sdaPin, sclPin);
@@ -89,22 +133,24 @@ private:
         400000UL;
 #endif
 
+    uint32_t clock = 400000;
     BeginFn beginFn = &defaultBegin;
+    ErrorFn errorFn = nullptr;
     bool begun = false;
 
-    constexpr bool valid() const
+    bool valid() const
     {
-      return (clock != 0) &&
-             (sda != scl) &&
-             (sda != -1) &&
-             (scl != -1) &&
-             (beginFn != nullptr);
+      return
+		(sda >= 0) &&
+		(scl >= 0) &&
+		(sda != scl) &&
+		(beginFn != nullptr);
     }
   };
 
   static State& state()
   {
-    static State s{};
+    static State s;
     return s;
   }
 };

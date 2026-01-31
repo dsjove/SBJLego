@@ -12,6 +12,7 @@ struct ArduinoGpioBackend
   static constexpr bool pin_supports_analog(int) { return true; }
   static constexpr bool pin_supports_pwm(int)    { return true; }
 
+  static constexpr bool alwaysReady = true;
   static constexpr bool verifyReady() { return true; }
 
   static void begin_analog_in(uint8_t)             {}
@@ -22,7 +23,7 @@ struct ArduinoGpioBackend
 
   static constexpr GpioArchTypes::pwm_type pwmMax(uint8_t)
   {
-	return static_cast<GpioArchTypes::pwm_type>(255);
+    return static_cast<GpioArchTypes::pwm_type>(255);
   }
 
   static GpioLevel read_digital(uint8_t pin)

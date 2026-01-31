@@ -24,6 +24,8 @@
 template <int NumPins = 32>
 struct UnitTestPinIO
 {
+  static constexpr bool alwaysReady = true;
+  
   static_assert(NumPins > 0 && NumPins <= 256, "NumPins must be 1..256");
 
   static constexpr bool pin_exists(int pin)
@@ -44,11 +46,6 @@ struct UnitTestPinIO
   static constexpr bool pin_is_reserved(int pin)
   {
     return false;
-  }
-
-  static bool verifyReady()
-  {
-      return true;
   }
 
   static constexpr GpioArchTypes::pwm_type pwmMax(uint8_t)

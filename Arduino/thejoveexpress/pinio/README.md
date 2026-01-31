@@ -1,11 +1,9 @@
 # PinIO
 
-**PinIO** is a **zero-overhead, declarative GPIO abstraction** for Arduino and RaspberryPi with embedded C++ 17.
+PinIO is a small, header-only GPIO abstraction for Arduino-class microcontrollers and Raspberry Pi / Linux systems.
 
-PinIO treats a pin not as a magic number, but as a **type** that encodes:
-- the pin identifier
-- the pin’s capability (input, output, etc.)
-- the hardware backend that implements it
+It allows pins, GPIO expanders, and even “virtual” pins to be expressed as
+**types**, enabling compile-time validation, zero dynamic allocation, no virtual methods, no state, and highly reusable application code.
 
 This approach improves **readability**, **maintainability**, and **testability** by pushing GPIO intent and correctness into the **type system**, while compiling down to direct hardware access with no runtime cost.
 
@@ -31,40 +29,39 @@ PinIO replaces this with **declarative pin definitions** and **compile-time safe
 
 ---
 
-## Core Concepts
+## Core Concept
 
-### 1. A Pin Is a Type
+### A Pin Is a Type - all behavior and no runtime state
 
-A pin is declared once, as a type:
+A GPIO pin is represented as a **type**, not an integer.
 
 ```cpp
-using LightPinDefault = PinIO<7, GpioMode::DigitalOut>;
+using Led = PinIO<LED_BUILTIN, GpioMode::DigitalOut>;
 ```
 
-This single line declares:
+This single line declares at compile time:
 - *which* pin
 - *how* it is used
 - *what operations are valid*
+- *named* for its purpose
 
-There is no state stored in the pin object itself. The compiler resolves everything at build time.
+Invalid configurations (nonexistent pins, unsupported modes, reserved pins)
+fail at compile time whenever possible.
 
----
-
-### 2. Zero-Overhead Abstraction
+### Zero-Overhead Abstraction
 
 PinIO avoids:
 - virtual functions
 - dynamic allocation
 - runtime dispatch
+- stateful issues
 
 When optimized, PinIO calls compile down to the same instructions as direct
 `digitalWrite()` or backend-specific register writes.
 
 The abstraction exists only at **compile time**.
 
----
-
-### 3. Bidirectional HAL
+### Two-way separation of concerns
 
 PinIO’s HAL works in both directions:
 
@@ -73,23 +70,7 @@ PinIO’s HAL works in both directions:
 
 This allows business logic to be written once and reused across hardware targets.
 
----
-
-### 4. Backends Are Swappable by Type
-
-The same pin declaration can be retargeted to different backends simply by changing the type:
-
-```cpp
-using LightPinDefault = PinIO<7, GpioMode::DigitalOut>;
-using LightPinUnitTest = PinIO<7, GpioMode::DigitalOut, UnitTestPinIO<>>;
-using LightPinExpansion = PinIO<9, GpioMode::DigitalOut, Mcp23017PinIO<>>;
-```
-
-No application logic changes.
-
----
-
-### 5. Mode Is Compile-Time Safety
+### Mode Is Compile-Time Safety
 
 Because the pin mode is part of the type:
 - calling `read()` on a `DigitalOut` pin is a compile-time error
@@ -98,56 +79,131 @@ Because the pin mode is part of the type:
 
 ---
 
-### 6. “Things That Look Like Pins”
-
-Any type that provides the required static interface can behave like a pin.
-
-Example: reroute a pin to Serial output:
+## Basic example
 
 ```cpp
-struct LightPinReroute {
-  static void begin(GpioLevel value) {
-    Serial.println(static_cast<uint8_t>(value));
-  }
-};
+using Led = PinIO<LED_BUILTIN, GpioMode::DigitalOut>;
+
+void setup()
+{
+  Led::begin(GpioLevel::High);
+}
+
+void loop()
+{
+  Led::write(GpioLevel::Low);
+  delay(500);
+  Led::write(GpioLevel::High);
+  delay(500);
+}
 ```
 
 ---
 
-## Hardware-Agnostic Business Logic Example
+## Backends
+
+PinIO separates *what* a pin is from *how* it is implemented.
+
+A backend provides the low-level GPIO operations for a platform or device.
+
+Examples include:
+
+- Arduino built-in GPIO
+- Arduino UNO R4 GPIO
+- ESP32 GPIO
+- Raspberry Pi GPIO (via `libgpiod`)
+- Unit-test / no-op backends
+
+`PinIO.h` is intended to be the primary include; it selects a default backend
+based on the platform.
+
+---
+
+## GPIO expanders
+
+PinIO supports GPIO expanders such as the MCP23017 by using a backend that
+routes GPIO operations through the expander.
+
+Expander backends may require explicit initialization before use:
+
+```cpp
+Mcp23017Device expander;
+expander.begin();
+
+using ExpanderPin = PinIO<9, GpioMode::DigitalOut, Mcp23017PinIO<>>;
+```
+
+Unlike MCU GPIO, expander backends may perform runtime readiness checks.
+
+---
+
+## Adapters and composition
+
+Because pins are types, they can be adapted or wrapped.
+
+A common example is **active-low hardware**, where a logical “High” turns an
+output *off*:
 
 ```cpp
 template <typename PIN>
-class Lighting {
-public:
-  void begin() {
-    PIN::begin(GpioLevel::High);
+struct ActiveLow
+{
+  static void begin(GpioLevel v) { PIN::begin(invert(v)); }
+  static void write(GpioLevel v) { PIN::write(invert(v)); }
+  static GpioLevel read()        { return invert(PIN::read()); }
+
+private:
+  static constexpr GpioLevel invert(GpioLevel v)
+  {
+    return (v == GpioLevel::High) ? GpioLevel::Low : GpioLevel::High;
   }
 };
 ```
 
----
-
-## Design Goals
-
-- Declarative GPIO usage
-- Zero runtime overhead
-- Strongly-typed pin capabilities
-- Backend-agnostic application logic
-- First-class unit testing support
+This allows hardware quirks to be handled without changing application logic.
 
 ---
 
-## Status
+## Testing
 
-PinIO is under active development.
-Breaking API changes may occur prior to a 1.0 release.
+PinIO includes a unit-test backend that allows code to compile and run without
+real hardware.
+
+```cpp
+using TestPin = PinIO<7, GpioMode::DigitalOut, UnitTestPinIOBackend<32>>;
+```
+
+This makes it possible to validate higher-level logic on desktop platforms.
 
 ---
+
+## Requirements
+
+- **C++17**
+- **Arduino builds**
+  - An Arduino core that supports C++17
+- **Raspberry Pi / Linux builds**
+  - `libgpiod` development headers (for example: `libgpiod-dev`)
+
+---
+
+## Design goals
+
+- Header-only, no `.cpp` files
+- No dynamic allocation or stateful variables
+- Compile-time validation of pin existence and capabilities
+- Strongly typed GPIO modes
+- No runtime overhead
+- Works with:
+  - Built-in MCU GPIO
+  - GPIO expanders (e.g. MCP23017)
+  - Test and simulation backends
+
+## Notes
+
+- `PinIO.h` is the umbrella header intended for most users.
 
 ## License
-
-PinIO is licensed under the Mozilla Public License 2.0 (MPL-2.0).
 
 Modifications to PinIO source files must be made available under the same license.
 Use in proprietary firmware is permitted.

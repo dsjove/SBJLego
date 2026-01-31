@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 // Project-local disabled pin constant.
 // Arduino's NOT_A_PIN exists but its numeric value is inconsistent across cores.
 inline constexpr int PINIO_DISABLED_PIN = -1;
@@ -34,7 +36,7 @@ struct GpioArchTypes
   using pwm_type    = uint8_t;
 #elif defined(ARDUINO_ARCH_RENESAS)
   using analog_type = uint16_t;
-  using pwm_type    = uint8_t;
+  using pwm_type    = uint16_t;
 #elif defined(ARDUINO_ARCH_ESP32)
   using analog_type = uint16_t;
   using pwm_type    = uint16_t;

@@ -2,31 +2,49 @@
 
 #include <Arduino.h>
 #include <SPI.h>
-#include <assert.h>
 
 #ifndef SPI_BEGIN
   #if defined(ARDUINO_ARCH_AVR)
+    // On AVR, pins are fixed and SPI.begin() takes no arguments.
     #define SPI_BEGIN(sck, miso, mosi) SPI.begin()
   #else
-    #define SPI_BEGIN(sck, miso, mosi) SPI.begin((sck), (miso), (mosi))
+    // On ESP32 and some other cores, SPI.begin(...) may accept pin arguments.
+    #define SPI_BEGIN(sck, miso, mosi) SPI.begin(sck, miso, mosi)
   #endif
+#endif
+
+#ifndef SPI_ON_ERROR
+  // Optional compile-time error hook.
+  // Example:
+  //   #define SPI_ON_ERROR(msg) do { /* log */ } while (0)
+  #define SPI_ON_ERROR(msg) ((void)0)
 #endif
 
 class SPIHardware
 {
 public:
   using BeginFn = void (*)(int sckPin, int misoPin, int mosiPin);
+  using ErrorFn = void (*)(const char* message);
 
-  // Call init if defaults do not work.
-  // Default values come from platform macros and Arch knowledge.
+  // Configure before begin().
   static void init(int sckPin, int misoPin, int mosiPin, BeginFn fn = nullptr)
   {
     auto& s = state();
-    assert(!s.begun && "SPI init() after begin()");
+
+    if (s.begun)
+    {
+      reportError("[SPI] init() after begin()");
+      return;
+    }
+
     s.sck  = sckPin;
     s.miso = misoPin;
     s.mosi = mosiPin;
-    if (fn) s.beginFn = fn;
+
+    if (fn)
+    {
+      s.beginFn = fn;
+    }
   }
 
   static bool valid()
@@ -34,21 +52,34 @@ public:
     return state().valid();
   }
 
+  // Optional runtime error handler.
+  static void onError(ErrorFn fn)
+  {
+    state().errorFn = fn;
+  }
+
   // Safe to call multiple times.
-  static void begin()
+  // Returns true on success.
+  static bool begin()
   {
     auto& s = state();
-    if (s.begun) return;
 
-    if (!s.valid())
+    if (s.begun)
     {
-      Serial.println("[SPI] Invalid config. Call SPIHardware::init(sck,miso,mosi[,beginFn]) in setup().");
-      assert(false);
-      return;
+      return true;
+    }
+
+    if (s.valid() == false)
+    {
+      reportError(
+        "[SPI] Invalid config. Call SPIHardware::init(sck, miso, mosi[, beginFn]) in setup()."
+      );
+      return false;
     }
 
     s.beginFn(s.sck, s.miso, s.mosi);
     s.begun = true;
+    return true;
   }
 
 #ifdef UNIT_TEST
@@ -59,6 +90,20 @@ public:
 #endif
 
 private:
+  static void reportError(const char* msg)
+  {
+    auto& s = state();
+
+    if (s.errorFn)
+    {
+      s.errorFn(msg);
+    }
+    else
+    {
+      SPI_ON_ERROR(msg);
+    }
+  }
+
   static void defaultBegin(int sckPin, int misoPin, int mosiPin)
   {
     SPI_BEGIN(sckPin, misoPin, mosiPin);
@@ -100,23 +145,23 @@ private:
 #endif
 
     BeginFn beginFn = &defaultBegin;
+    ErrorFn errorFn = nullptr;
     bool begun = false;
 
-    constexpr bool valid() const
+    bool valid() const
     {
-      return (sck != miso) &&
-             (sck != mosi) &&
-             (miso != mosi) &&
-             (sck != -1) &&
-             (miso != -1) &&
-             (mosi != -1) &&
-             (beginFn != nullptr);
+      return
+        (sck >= 0) &&
+        (miso >= 0) &&
+        (mosi >= 0) &&
+        (sck != miso) && (miso != mosi) && (mosi != sck) &&
+        (beginFn != nullptr);
     }
   };
 
   static State& state()
   {
-    static State s{};
+    static State s;
     return s;
   }
 };
