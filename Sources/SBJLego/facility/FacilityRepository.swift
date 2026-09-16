@@ -7,11 +7,12 @@
 
 import Foundation
 import Observation
-import SBJKit
+import SBJFoundation
 import BLEByJove
 
 public typealias FacilityEntry = Identified<any Facility>
 
+@MainActor
 @Observable
 public final class FacilityRepository: RFIDConsumer, PFTransmitter {
 	public private(set) var scanners: [any DeviceScanning] = []
@@ -26,7 +27,7 @@ public final class FacilityRepository: RFIDConsumer, PFTransmitter {
 
 	public func addScanner<S: DeviceScanner>(
 		_ scanner: S,
-		_ facilities: @escaping (S.Device)->[Facility]) {
+		_ facilities: @escaping (S.Device)->[any Facility]) {
 		scanners.append(scanner)
 		observeValue(of: scanner, \.devices, with: self) { scanner, _, this in
 			this?.sync(scanner, facilities)
@@ -39,7 +40,7 @@ public final class FacilityRepository: RFIDConsumer, PFTransmitter {
 		}
 	}
 
-	private func sync<S: DeviceScanner>(_ scanner: S, _ facilities: (S.Device)->[Facility]) {
+	private func sync<S: DeviceScanner>(_ scanner: S, _ facilities: (S.Device)->[any Facility]) {
 		let scannerDevices = scanner.devices
 		let scannerDeviceIds = Set(scannerDevices.map(\.id))
 		var scope = facilitiesByDeviceID[ObjectIdentifier(scanner)] ?? [:]

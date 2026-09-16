@@ -8,6 +8,7 @@
 import Foundation
 import BLEByJove
 
+@MainActor
 public struct CCMotor: MotorProtocol {
 	public typealias Power = TransformedProperty<ScaledTransformer<Int16>>
 	public typealias Calibration = TransformedProperty<ScaledTransformer<Int16>>
@@ -16,6 +17,7 @@ public struct CCMotor: MotorProtocol {
 	public let calibration: Calibration?
 
 	public init(cube: CircuitCube) {
+		@MainActor
 		class Inner {
 			let cube: CircuitCube
 			weak var power: Power? = nil

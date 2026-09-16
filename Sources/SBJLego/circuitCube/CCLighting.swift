@@ -8,6 +8,7 @@
 import Foundation
 import BLEByJove
 
+@MainActor
 public struct CCLighting: LightingProtocol {
 	public typealias Value = TransformedProperty<ScaledTransformer<Int16>>
 	

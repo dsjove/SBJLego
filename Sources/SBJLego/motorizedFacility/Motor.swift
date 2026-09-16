@@ -8,6 +8,7 @@
 import Foundation
 import BLEByJove
 
+@MainActor
 public protocol MotorProtocol {
 	associatedtype Power: ControlledProperty where Power.P == Double
 	associatedtype Calibration: ControlledProperty where Calibration.P == Double
@@ -33,6 +34,7 @@ public extension MotorProtocol {
 	}
 }
 
+@MainActor
 public struct BTMotor: MotorProtocol {
 	public typealias Power = BTProperty<ScaledTransformer<Int8>>
 	public typealias Calibration = BTProperty<ScaledTransformer<UInt8>>

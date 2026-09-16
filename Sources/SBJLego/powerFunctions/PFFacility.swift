@@ -7,22 +7,23 @@
 
 import Foundation
 import BLEByJove
-import SBJKit
+import SBJFoundation
 
 public protocol PFFacilityMeta: PFMeta {
 	var category: FacilityCategory { get }
 	var name: String { get }
-	var image: ImageName { get }
+	var image: ImageReference { get }
 }
 
+@MainActor
 @Observable
-public class PFFacility<M: PFFacilityMeta>: MotorizedFacility {
+public class PFFacility<M: PFFacilityMeta>: @MainActor MotorizedFacility {
 	private let device: PFDevice<M>
 
 	public var id: UUID { device.id }
 	public var category: FacilityCategory { device.info.category }
 	public var name: String { device.info.name }
-	public var image: ImageName { device.info.image }
+	public var image: ImageReference { device.info.image }
 
 	public private(set) var motor: PFMotor
 	public private(set) var lighting: PFLighting?

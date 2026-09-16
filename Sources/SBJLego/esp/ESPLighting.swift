@@ -6,10 +6,9 @@
 //
 
 import Foundation
-import SBJKit
 import BLEByJove
-import Network
 
+@MainActor
 public struct ESPLighting: LightingProtocol {
 	public typealias Value = TransformedProperty<ScaledTransformer<UInt8>>
 

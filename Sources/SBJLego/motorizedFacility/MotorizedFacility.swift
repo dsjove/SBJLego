@@ -5,14 +5,14 @@
 //  Created by David Giovannini on 1/22/26.
 //
 
-import SBJKit
 import BLEByJove
 import Foundation
 import Network
 
 public typealias IPv4AddressProperty = BTProperty<BTValueTransformer<IPv4Address>>
 
-public protocol MotorizedFacility: Facility {
+@MainActor
+public protocol MotorizedFacility: @MainActor Facility {
 	associatedtype Motor: MotorProtocol
 	associatedtype Lighting: LightingProtocol
 

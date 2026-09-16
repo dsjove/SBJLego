@@ -7,6 +7,7 @@
 
 import BLEByJove
 
+@MainActor
 public struct ArduinoDisplay {
 	public typealias Power = BTProperty<BTValueTransformer<ArduinoR4Matrix>>
 	public private(set) var power: Power

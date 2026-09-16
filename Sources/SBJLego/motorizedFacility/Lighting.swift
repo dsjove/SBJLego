@@ -8,6 +8,7 @@
 import Foundation
 import BLEByJove
 
+@MainActor
 public protocol LightingProtocol {
 	associatedtype Value: ControlledProperty where Value.P == Double
 
@@ -33,6 +34,7 @@ public extension LightingProtocol {
 	}
 }
 
+@MainActor
 public struct BTLighting: LightingProtocol {
 	public typealias Value = BTProperty<ScaledTransformer<UInt8>>
 	

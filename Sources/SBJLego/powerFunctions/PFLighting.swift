@@ -8,6 +8,7 @@
 import Foundation
 import BLEByJove
 
+@MainActor
 public struct PFLighting: LightingProtocol {
 	public typealias Value = TransformedProperty<ScaledTransformer<UInt8>>
 	

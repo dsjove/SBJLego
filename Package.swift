@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.4
 
 import PackageDescription
 
@@ -15,14 +15,23 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BLEByJove"),
-        .package(path: "../SBJKit"),
+        .package(path: "../SBJFoundation"),
     ],
     targets: [
         .target(
             name: "SBJLego",
-            dependencies: ["BLEByJove", "SBJKit"]),
+            dependencies: ["BLEByJove", "SBJFoundation"],
+            resources: [.process("Resources")],
+            swiftSettings: [
+                .enableUpcomingFeature("ApproachableConcurrency"),
+                .defaultIsolation(nil),
+            ]),
         .testTarget(
             name: "SBJLegoTests",
-            dependencies: ["SBJLego"]),
+            dependencies: ["SBJLego"],
+            swiftSettings: [
+                .enableUpcomingFeature("ApproachableConcurrency"),
+                .defaultIsolation(nil),
+            ]),
     ]
 )

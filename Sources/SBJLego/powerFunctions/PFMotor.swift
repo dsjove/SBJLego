@@ -8,6 +8,7 @@
 import Foundation
 import BLEByJove
 
+@MainActor
 public struct PFMotor: MotorProtocol {
 	public typealias Power = TransformedProperty<ScaledTransformer<Int8>>
 	public typealias Calibration = TransformedProperty<ScaledTransformer<UInt8>>
@@ -21,7 +22,7 @@ public struct PFMotor: MotorProtocol {
 		self.power = Power(
 			sendControl: { value in
 				device.transmit(port: port, power: value)
-				return abs(value) < (256 / 32) ? 0 : value
+				return abs(value) < Int8(8) ? 0 : value
 			},
 			transfomer: ScaledTransformer((127)))
 

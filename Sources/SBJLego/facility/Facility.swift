@@ -1,6 +1,6 @@
 import Foundation
 import Observation
-import SBJKit
+import SBJFoundation
 import BLEByJove
 
 public extension RFIDDetection {
@@ -19,6 +19,7 @@ public extension FacilityCategory {
 	static let housing = FacilityCategory("housing")
 }
 
+@MainActor
 public protocol HardwareConnecting {
 	var hasConnectionState: Bool { get }
 	var autoConnects: Bool { get }
@@ -36,12 +37,13 @@ public extension Facility {
 	var heartBeat: Int { connectionState == .connected ? 0 : -1 }
 }
 
-public protocol Facility: HardwareConnecting, Identifiable {
+@MainActor
+public protocol Facility: @MainActor HardwareConnecting, @MainActor Identifiable {
 	var id: UUID { get }
 
 	var category: FacilityCategory { get }
 	var name: String { get }
-	var image: ImageName { get }
+	var image: ImageReference { get }
 
 	var canSetName: Bool { get }
 	func change(name: String)
@@ -55,12 +57,13 @@ public extension Facility {
 	var battery: Double? { nil }
 }
 
+@MainActor
 @Observable
-public class UnsupportedFacility: Facility {
+public class UnsupportedFacility: @MainActor Facility {
 	public let id = UUID()
 	public let name: String
 	public let category: FacilityCategory = .transportation
-	public let image: ImageName = .system("questionmark.diamond")
+	public let image: ImageReference = .system("questionmark.diamond")
 
 	public let connectionState: BLEByJove.ConnectionState = .disconnected
 

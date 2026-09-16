@@ -6,12 +6,13 @@
 //
 
 import Foundation
-import SBJKit
+import SBJFoundation
 import BLEByJove
 import Network
 
+@MainActor
 @Observable
-public class ESPCam: Facility {
+public class ESPCam: @MainActor Facility {
 	public typealias Lighting = ESPLighting
 
 	public static let Service = "espcam"
@@ -41,7 +42,7 @@ public class ESPCam: Facility {
 	}
 
 	public var category: FacilityCategory { .housing }
-	public var image: ImageName { .system("eye") }
+	public var image: ImageReference { .system("eye") }
 	public let name : String
 	public let connectionState: BLEByJove.ConnectionState = .connected
 
