@@ -18,7 +18,7 @@ private final class TestScanner: DeviceScanner {
 
 @MainActor
 @Observable
-private final class TestFacility: Facility {
+private final class TestFacility: @MainActor Facility {
     let id: UUID
     let category: FacilityCategory = .transportation
     let image: ImageReference = .none
