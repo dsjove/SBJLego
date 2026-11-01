@@ -7,12 +7,12 @@
 
 import Foundation
 import BLEByJove
-import SBJFoundation
+import SBJLocalization
 
 public protocol PFFacilityMeta: PFMeta {
 	var category: FacilityCategory { get }
 	var name: String { get }
-	var image: ImageReference { get }
+	var image: SBJSymbol { get }
 }
 
 @MainActor
@@ -23,7 +23,7 @@ public class PFFacility<M: PFFacilityMeta>: @MainActor MotorizedFacility {
 	public var id: UUID { device.id }
 	public var category: FacilityCategory { device.info.category }
 	public var name: String { device.info.name }
-	public var image: ImageReference { device.info.image }
+	public var image: SBJSymbol { device.info.image }
 
 	public private(set) var motor: PFMotor
 	public private(set) var lighting: PFLighting?

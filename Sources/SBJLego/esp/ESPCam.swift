@@ -6,9 +6,9 @@
 //
 
 import Foundation
-import SBJFoundation
 import BLEByJove
 import Network
+import SBJLocalization
 
 @MainActor
 @Observable
@@ -42,7 +42,7 @@ public class ESPCam: @MainActor Facility {
 	}
 
 	public var category: FacilityCategory { .housing }
-	public var image: ImageReference { .system("eye") }
+	public var image: SBJSymbol { .system("eye") }
 	public let name : String
 	public let connectionState: BLEByJove.ConnectionState = .connected
 

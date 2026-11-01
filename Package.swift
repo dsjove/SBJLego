@@ -17,12 +17,12 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BLEByJove"),
-        .package(path: "../SBJFoundation"),
+        .package(path: "../../SBJFoundation/Packages/SBJLocalization"),
     ],
     targets: [
         .target(
             name: "SBJLego",
-            dependencies: ["BLEByJove", "SBJFoundation"],
+            dependencies: ["BLEByJove", "SBJLocalization"],
             resources: [.process("Resources")],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),

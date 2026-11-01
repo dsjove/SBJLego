@@ -1,7 +1,7 @@
 import Foundation
 import Observation
-import SBJFoundation
 import BLEByJove
+import SBJLocalization
 
 public extension RFIDDetection {
 	var uuid: UUID { UUID(dataBytes: id) }
@@ -43,7 +43,7 @@ public protocol Facility: @MainActor HardwareConnecting, @MainActor Identifiable
 
 	var category: FacilityCategory { get }
 	var name: String { get }
-	var image: ImageReference { get }
+	var image: SBJSymbol { get }
 
 	var canSetName: Bool { get }
 	func change(name: String)
@@ -63,7 +63,7 @@ public class UnsupportedFacility: @MainActor Facility {
 	public let id = UUID()
 	public let name: String
 	public let category: FacilityCategory = .transportation
-	public let image: ImageReference = .system("questionmark.diamond")
+	public let image: SBJSymbol = .system("questionmark.diamond")
 
 	public let connectionState: BLEByJove.ConnectionState = .disconnected
 

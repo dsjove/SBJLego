@@ -1,7 +1,7 @@
 import Observation
 import XCTest
-import SBJFoundation
 import BLEByJove
+import SBJLocalization
 @testable import SBJLego
 
 private struct TestDevice: DeviceIdentifiable {
@@ -21,7 +21,7 @@ private final class TestScanner: DeviceScanner {
 private final class TestFacility: @MainActor Facility {
     let id: UUID
     let category: FacilityCategory = .transportation
-    let image: ImageReference = .none
+    let image: SBJSymbol = .system("")
     let name: String
     private(set) var connectionState: ConnectionState = .disconnected
     private(set) var connectCount = 0

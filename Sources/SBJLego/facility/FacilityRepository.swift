@@ -7,8 +7,8 @@
 
 import Foundation
 import Observation
-import SBJFoundation
 import BLEByJove
+import SBJLocalization
 
 public typealias FacilityEntry = Identified<any Facility>
 
